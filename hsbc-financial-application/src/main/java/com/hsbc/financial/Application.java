@@ -6,9 +6,15 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(scanBasePackages = {"com.hsbc.financial"})
 @PropertySource(value = {"classpath:important.properties"}, encoding = "UTF-8")
+@EnableRetry
+@EnableJpaRepositories
+@EnableTransactionManagement
 public class Application extends SpringBootServletInitializer {
 
      /**

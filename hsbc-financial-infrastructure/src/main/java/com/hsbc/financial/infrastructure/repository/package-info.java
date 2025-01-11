@@ -1,1 +1,0 @@
-package com.hsbc.financial.infrastructure.repository;

@@ -1,1 +1,0 @@
-package com.hsbc.financial.domain.dom2.translate;
