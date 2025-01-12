@@ -17,6 +17,11 @@ import java.util.concurrent.Executor;
 @Configuration
 @EnableAsync
 public class AsyncConfig {
+    /**
+     * 创建一个名为'eventTaskExecutor'的线程池执行器。
+     *
+     * @return 配置好的线程池执行器对象。
+     */
     @Bean(name = "eventTaskExecutor")
     public Executor eventTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

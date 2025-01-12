@@ -19,6 +19,10 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class MethodLogAspect {
+    /**
+     * 在方法调用前记录日志信息。
+     * @param joinPoint 切入点对象，用于获取被调用的方法信息和参数。
+     */
     @Before("@annotation(com.hsbc.financial.domain.common.aop.annotation.MethodLog)")
     public void logMethodCall(JoinPoint joinPoint) {
         String methodName = joinPoint.getSignature().getName();

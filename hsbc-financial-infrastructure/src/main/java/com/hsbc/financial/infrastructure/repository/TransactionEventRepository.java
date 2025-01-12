@@ -12,5 +12,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
  **/
 public interface TransactionEventRepository extends JpaRepository<TransactionEvent, Long> {
 
+    /**
+     * 根据交易ID查找交易事件。
+     * @param transactionId 交易ID。
+     * @return 对应的交易事件。
+     */
     TransactionEvent findByTransactionId(String transactionId);
 }
