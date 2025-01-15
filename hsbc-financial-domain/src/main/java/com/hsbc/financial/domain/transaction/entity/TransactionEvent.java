@@ -1,9 +1,12 @@
 package com.hsbc.financial.domain.transaction.entity;
 
+import com.hsbc.financial.domain.enums.TransactionStatus;
 import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -60,6 +63,17 @@ public class TransactionEvent {
      * 事件类型，表示交易事件的具体类型。
      */
     private String eventType;
+
+    /**
+     * 交易事件的状态，表示交易事件的当前状态。
+     */
+    @Enumerated(EnumType.ORDINAL)
+    private TransactionStatus status;
+
+    /**
+     * 交易事件失败的原因，用于记录交易事件失败的具体原因。
+     */
+    private String failedReason;
 
     /**
      * 事件的详细数据，可能包含大量文本或二进制数据。

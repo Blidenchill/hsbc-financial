@@ -1,5 +1,6 @@
 package com.hsbc.financial.infrastructure.config;
 
+import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -43,7 +44,9 @@ public class RedissonConfig {
         String addressTemplate = "redis://%s:%s";
         String address = String.format(addressTemplate, host, port);
         config.useSingleServer().setAddress(address);
-        config.useSingleServer().setPassword(password);
+        if(StringUtils.isNotBlank(password)) {
+            config.useSingleServer().setPassword(password);
+        }
         return Redisson.create(config);
     }
 

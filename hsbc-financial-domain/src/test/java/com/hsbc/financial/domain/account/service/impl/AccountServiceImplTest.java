@@ -4,34 +4,20 @@ import java.math.BigDecimal;
 
 import com.hsbc.financial.domain.common.exception.BusinessException;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
-
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
 import com.hsbc.financial.domain.account.entity.AccountSnapshot;
-
 import com.hsbc.financial.domain.common.cache.CacheService;
 import com.hsbc.financial.domain.account.facade.AccountSnapshotFacadeService;
-
 import com.hsbc.financial.domain.account.entity.Account;
-
-
 import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
-import com.hsbc.financial.domain.common.exception.SystemException;
-
 import com.hsbc.financial.domain.account.facade.AccountFacadeService;
-
 import java.util.concurrent.TimeUnit;
-
 import org.mockito.*;
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -55,54 +41,7 @@ public class AccountServiceImplTest {
 	@Mock
 	private AccountFacadeService accountFacadeService;
 
-    @Test
-    public void testConstructor() {
 
-        AccountFacadeService mockAccountFacadeService = new AccountFacadeService() {
-            @Override
-            public Optional<Account> findByAccountIdForUpdate(String accountId) {
-                return null;
-            }
-
-            @Override
-            public void save(Account account) {
-            }
-
-            @Override
-            public Optional<Account> findByAccountId(String accountId) {
-                return Optional.empty();
-            }
-        };
-        AccountSnapshotFacadeService accountSnapshotFacadeService = new AccountSnapshotFacadeService() {
-            @Override
-            public Optional<AccountSnapshot> findTopByAccountIdOrderByVersionDesc(String accountId) throws InfrastructureException {
-                return Optional.empty();
-            }
-
-            @Override
-            public void save(AccountSnapshot accountSnapshot) {
-
-            }
-        };
-        CacheService cacheService = new CacheService() {
-            @Override
-            public String generateKey(String range, String key) {
-                return "";
-            }
-            @Override
-            public <V> void add(String key, V value, long expirationTime, TimeUnit timeUnit) {
-
-            }
-            @Override
-            public Object get(String key) {
-                return null;
-            }
-        };
-
-        AccountServiceImpl accountServiceImpl = new AccountServiceImpl(accountFacadeService, accountSnapshotFacadeService, cacheService);
-
-        assertNotNull(accountServiceImpl);
-    }
 
     @Test
     public void testGetAccountByIdAccountInCache() {

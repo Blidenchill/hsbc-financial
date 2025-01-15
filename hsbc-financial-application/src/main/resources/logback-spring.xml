@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 定义日志输出格式 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 配置控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 配置 INFO 级别的 RollingFileAppender -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 日志文件路径 -->
+        <file>logs/info.log</file>
+        <!-- 定义滚动策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <!-- 滚动后的文件名称 -->
+            <fileNamePattern>logs/info.%i.log</fileNamePattern>
+            <!-- 滚动文件的最小和最大索引 -->
+            <minIndex>1</minIndex>
+            <maxIndex>10</maxIndex>
+        </rollingPolicy>
+        <!-- 定义触发滚动的策略，基于文件大小 -->
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <!-- 文件最大大小为 50MB -->
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <!-- 过滤器：只接收 INFO 级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <!-- 定义日志输出格式 -->
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 使用异步 Appender 包装 INFO_FILE -->
+    <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="INFO_FILE"/>
+    </appender>
+
+    <!-- 配置 WARN 级别的 RollingFileAppender -->
+    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/warn.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>logs/warn.%i.log</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>10</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <!-- 过滤器：只接收 WARN 级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 使用异步 Appender 包装 WARN_FILE -->
+    <appender name="ASYNC_WARN" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="WARN_FILE"/>
+    </appender>
+
+    <!-- 配置 ERROR 级别的 RollingFileAppender -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>logs/error.%i.log</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>10</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <!-- 过滤器：只接收 ERROR 级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 使用异步 Appender 包装 ERROR_FILE -->
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+    </appender>
+
+    <!-- 配置根日志记录器 -->
+    <root level="INFO">
+        <!-- 将所有日志输出到控制台 -->
+        <appender-ref ref="CONSOLE"/>
+        <!-- 分级别异步输出到相应的文件 -->
+        <appender-ref ref="ASYNC_INFO"/>
+        <appender-ref ref="ASYNC_WARN"/>
+        <appender-ref ref="ASYNC_ERROR"/>
+    </root>
+
+</configuration>

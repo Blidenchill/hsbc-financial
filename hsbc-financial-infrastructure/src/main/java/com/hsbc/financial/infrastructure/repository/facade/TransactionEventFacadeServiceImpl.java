@@ -1,6 +1,7 @@
 package com.hsbc.financial.infrastructure.repository.facade;
 
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
+import com.hsbc.financial.domain.enums.TransactionStatus;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
 import com.hsbc.financial.domain.transaction.facade.TransactionEventFacadeService;
 import com.hsbc.financial.infrastructure.repository.TransactionEventRepository;
@@ -44,6 +45,27 @@ public class TransactionEventFacadeServiceImpl implements TransactionEventFacade
         } catch (Exception ex) {
             log.error("当前数据库保存账号快照信息异常", ex);
             throw new InfrastructureException("当前数据库保存账号快照信息异常");
+        }
+    }
+
+    /**
+     * 根据交易ID更新交易状态。
+     * @param transactionId 交易ID。
+     * @param status 新的交易状态。
+     */
+    @Override
+    public void updateStatusByTransactionId(String transactionId, TransactionStatus status, String failReason) {
+        try{
+            int updateNum = transactionEventRepository.updateStatusByTransactionId(transactionId, status, failReason);
+            if(updateNum > 0) {
+                log.info("根据交易ID更新交易状态成功, transactionId={}, status={}", transactionId, status);
+            } else {
+                log.warn("未更新成功, 可能transactionId={}不存在", transactionId);
+            }
+
+        } catch (Exception ex) {
+            log.error("当前数据库更新状态异常", ex);
+            throw new InfrastructureException("changeTransactionProcessed");
         }
     }
 }

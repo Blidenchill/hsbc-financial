@@ -35,7 +35,7 @@ public class MethodLogAspect {
         builder.append(";");
         builder.append("入参：");
         for (Object item : args) {
-            builder.append(String.valueOf(item));
+            builder.append(item);
             builder.append(",");
         }
         log.info(builder.toString());

@@ -3,6 +3,7 @@ package com.hsbc.financial.infrastructure.mq;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
 import com.hsbc.financial.domain.transaction.event.EventBus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -14,7 +15,11 @@ import org.springframework.kafka.core.KafkaTemplate;
  **/
 public class KafkaEventBus implements EventBus {
 
-
+    /**
+     * Kafka 主题名称，用于发布交易事件。
+     */
+    @Value("${event.bus.kafka.topic}")
+    private String kafkaTopic;
     /**
      * 用于发送事件的 Kafka 模板对象。
      */
@@ -35,6 +40,6 @@ public class KafkaEventBus implements EventBus {
      */
     @Override
     public void publish(TransactionEvent event) {
-        kafkaTemplate.send("transaction-events", event.getEventId(), event.getEventData());
+        kafkaTemplate.send(kafkaTopic, event.getEventId(), event.getEventData());
     }
 }

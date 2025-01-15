@@ -1,5 +1,6 @@
 package com.hsbc.financial.domain.transaction.facade;
 
+import com.hsbc.financial.domain.enums.TransactionStatus;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
 
 /**
@@ -15,4 +16,6 @@ public interface TransactionEventFacadeService {
      * @param transactionEvent 交易事件对象。
      */
     void save(TransactionEvent transactionEvent);
+
+    void updateStatusByTransactionId(String transactionId, TransactionStatus status, String failReason);
 }

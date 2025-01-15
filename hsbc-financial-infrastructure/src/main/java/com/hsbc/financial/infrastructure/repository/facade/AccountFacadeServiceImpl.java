@@ -3,7 +3,6 @@ package com.hsbc.financial.infrastructure.repository.facade;
 import com.hsbc.financial.domain.account.entity.Account;
 import com.hsbc.financial.domain.account.facade.AccountFacadeService;
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
-import com.hsbc.financial.domain.common.exception.SystemException;
 import com.hsbc.financial.infrastructure.repository.AccountRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

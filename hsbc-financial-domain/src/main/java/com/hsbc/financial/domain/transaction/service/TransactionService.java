@@ -15,4 +15,17 @@ public interface TransactionService {
      * @param command 交易命令对象
      */
     void processTransaction(TransactionCommand command);
+
+    /**
+     * 更新交易的处理状态
+     * @param transactionId 交易ID
+     */
+    void changeTransactionProcessed(String transactionId);
+
+    /**
+     * 将指定交易的状态改为失败，并记录失败原因。
+     * @param transactionId 交易ID
+     * @param failReason 失败原因
+     */
+    void changeTransactionFailed(String transactionId, String failReason);
 }
