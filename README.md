@@ -43,7 +43,7 @@
 ### 基础设施层(Infrastructure)
 负责提供支持应用程序运行的基础设施，包括与具体技术相关的实现。基础设施层通常包括与数据库、消息队列、缓存、外部服务等进行交互的代码，以及一些通用的工具类和配置，也包括filter等实现。<br>
 ### 依赖关系
-![脚手架关系依赖图](./document/picture/scafford-dependence.png)
+![脚手架关系依赖图](document/picture/scafford-dependence.png)
 因为本次工程不涉及adapter层,所以删除.
 
 ## 系统详细设计
