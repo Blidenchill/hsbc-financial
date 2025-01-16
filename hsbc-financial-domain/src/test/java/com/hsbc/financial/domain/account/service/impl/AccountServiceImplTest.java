@@ -3,6 +3,7 @@ package com.hsbc.financial.domain.account.service.impl;
 import java.math.BigDecimal;
 
 import com.hsbc.financial.domain.common.exception.BusinessException;
+import com.hsbc.financial.domain.common.exception.InsufficientBalanceException;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
 import java.util.Optional;
 
@@ -21,6 +22,8 @@ import com.hsbc.financial.domain.account.facade.AccountFacadeService;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.mockito.*;
+import org.springframework.boot.web.embedded.netty.NettyWebServer;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -178,15 +181,41 @@ public class AccountServiceImplTest {
         command.setAmount(BigDecimal.TEN);
 
         Account sourceAccount = new Account();
-        sourceAccount.setAccountId("source123");
+        sourceAccount.setAccountId(command.getSourceAccountId());
         sourceAccount.setBalance(BigDecimal.TEN);
 
         Account destAccount = new Account();
-        destAccount.setAccountId("dest456");
+        destAccount.setAccountId(command.getDestAccountId());
         destAccount.setBalance(BigDecimal.TEN);
 
-        when(accountFacadeService.findByAccountIdForUpdate("source123")).thenReturn(Optional.of(sourceAccount));
-        when(accountFacadeService.findByAccountIdForUpdate("dest456")).thenReturn(Optional.of(destAccount));
+        when(accountFacadeService.findByAccountIdForUpdate(command.getSourceAccountId())).thenReturn(Optional.of(sourceAccount));
+        when(accountFacadeService.findByAccountIdForUpdate(command.getDestAccountId())).thenReturn(Optional.of(destAccount));
+        doNothing().when(transactionService).changeTransactionProcessed(command.getTransactionId());
+        // When
+        accountServiceImpl.updateAccountBalances(command);
+        // Then
+        assertEquals(BigDecimal.ZERO, sourceAccount.getBalance());
+
+    }
+
+    @Test
+    public void testUpdateAccountBalancesSufficientBalanceExchangeAccountId() {
+        TransactionCommand command = new TransactionCommand();
+        command.setTransactionId(UUID.randomUUID().toString());
+        command.setSourceAccountId("dest456");
+        command.setDestAccountId("source123");
+        command.setAmount(BigDecimal.TEN);
+
+        Account sourceAccount = new Account();
+        sourceAccount.setAccountId(command.getSourceAccountId());
+        sourceAccount.setBalance(BigDecimal.TEN);
+
+        Account destAccount = new Account();
+        destAccount.setAccountId(command.getDestAccountId());
+        destAccount.setBalance(BigDecimal.TEN);
+
+        when(accountFacadeService.findByAccountIdForUpdate(command.getSourceAccountId())).thenReturn(Optional.of(sourceAccount));
+        when(accountFacadeService.findByAccountIdForUpdate(command.getDestAccountId())).thenReturn(Optional.of(destAccount));
         doNothing().when(transactionService).changeTransactionProcessed(command.getTransactionId());
         // When
         accountServiceImpl.updateAccountBalances(command);
@@ -236,24 +265,6 @@ public class AccountServiceImplTest {
     }
 
     /**
-     * 测试在更新账户余额时抛出 DeadlockException 的情况。
-     * @throws BusinessException 如果在更新账户余额时发生业务异常。
-     */
-    @Test
-    public void testUpdateAccountBalancesDeadlockException() {
-        TransactionCommand command = new TransactionCommand();
-        command.setSourceAccountId("source123");
-        command.setDestAccountId("dest456");
-        command.setAmount(BigDecimal.TEN);
-
-        when(accountFacadeService.findByAccountIdForUpdate("source123")).thenThrow(new InfrastructureException("Deadlock", null));
-
-        assertThrows(BusinessException.class, () -> {
-            accountServiceImpl.updateAccountBalances(command);
-        });
-    }
-
-    /**
      * 测试更新账户余额时抛出其他异常的场景。
      * @throws BusinessException 如果在更新账户余额过程中发生业务异常。
      */
@@ -268,6 +279,29 @@ public class AccountServiceImplTest {
         assertThrows(BusinessException.class, () -> {
             accountServiceImpl.updateAccountBalances(command);
         });
+    }
+
+    @Test
+    public void testUpdateAccountBalancesInsufficientBalanceException() {
+        TransactionCommand command = new TransactionCommand();
+        command.setSourceAccountId("source123");
+        command.setDestAccountId("dest456");
+        command.setAmount(BigDecimal.TEN);
+
+        Account sourceAccount = new Account();
+        sourceAccount.setAccountId("source123");
+        sourceAccount.setBalance(new BigDecimal("9.00"));
+
+        Account destAccount = new Account();
+        destAccount.setAccountId("dest456");
+        destAccount.setBalance(new BigDecimal("9.00"));
+
+        when(accountFacadeService.findByAccountIdForUpdate("source123")).thenReturn(Optional.of(sourceAccount));
+        when(accountFacadeService.findByAccountIdForUpdate("dest456")).thenReturn(Optional.of(destAccount));
+        assertThrows(InsufficientBalanceException.class, () -> {
+            accountServiceImpl.updateAccountBalances(command);
+        });
+
     }
 
 }
