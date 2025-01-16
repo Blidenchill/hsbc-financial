@@ -3,7 +3,9 @@
 import com.hsbc.financial.domain.account.entity.Account;
 import com.hsbc.financial.domain.account.facade.AccountFacadeService;
 import com.hsbc.financial.domain.common.aop.annotation.MethodLog;
+import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
 import com.hsbc.financial.domain.common.exception.BusinessException;
+import com.hsbc.financial.domain.common.exception.TransactionNotFoundException;
 import com.hsbc.financial.domain.common.utils.JacksonUtil;
 import com.hsbc.financial.domain.enums.TransactionStatus;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
@@ -32,7 +34,7 @@ import java.util.UUID;
  * @className TransactionServiceImpl
  **/
 @Service
-<span class="fc" id="L35">@Slf4j</span>
+<span class="fc" id="L37">@Slf4j</span>
 public class TransactionServiceImpl implements TransactionService {
 
     /**
@@ -57,11 +59,11 @@ public class TransactionServiceImpl implements TransactionService {
      * @param transactionEventFacadeService 事务事件外观服务，提供事务相关的操作接口。
      */
     @Autowired
-<span class="fc" id="L60">    public TransactionServiceImpl(EventBus eventBus, TransactionEventFacadeService transactionEventFacadeService, AccountFacadeService accountFacadeService) {</span>
-<span class="fc" id="L61">        this.eventBus = eventBus;</span>
-<span class="fc" id="L62">        this.transactionEventFacadeService = transactionEventFacadeService;</span>
-<span class="fc" id="L63">        this.accountFacadeService = accountFacadeService;</span>
-<span class="fc" id="L64">    }</span>
+<span class="fc" id="L62">    public TransactionServiceImpl(EventBus eventBus, TransactionEventFacadeService transactionEventFacadeService, AccountFacadeService accountFacadeService) {</span>
+<span class="fc" id="L63">        this.eventBus = eventBus;</span>
+<span class="fc" id="L64">        this.transactionEventFacadeService = transactionEventFacadeService;</span>
+<span class="fc" id="L65">        this.accountFacadeService = accountFacadeService;</span>
+<span class="fc" id="L66">    }</span>
 
     /**
      * 处理交易命令，创建并发布交易事件。
@@ -72,82 +74,108 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @MethodLog
     public void processTransaction(TransactionCommand command) {
-<span class="fc" id="L75">        checkTransactionCommand(command);</span>
+<span class="fc" id="L77">        checkTransactionCommand(command);</span>
         // 创建交易事件
-<span class="fc" id="L77">        TransactionEvent event = new TransactionEvent();</span>
-<span class="fc" id="L78">        event.setEventId(UUID.randomUUID().toString());</span>
-<span class="fc" id="L79">        event.setTransactionId(command.getTransactionId());</span>
-<span class="fc" id="L80">        event.setSourceAccountId(command.getSourceAccountId());</span>
-<span class="fc" id="L81">        event.setDestAccountId(command.getDestAccountId());</span>
-<span class="fc" id="L82">        event.setAmount(command.getAmount());</span>
-<span class="fc" id="L83">        event.setEventType(&quot;TRANSACTION_CREATED&quot;);</span>
-<span class="fc" id="L84">        event.setStatus(TransactionStatus.SUBMITTED);</span>
-<span class="fc" id="L85">        event.setEventData(JacksonUtil.toJson(command));</span>
-<span class="fc" id="L86">        event.setCreatedAt(new Timestamp(System.currentTimeMillis()));</span>
+<span class="fc" id="L79">        TransactionEvent event = new TransactionEvent();</span>
+<span class="fc" id="L80">        event.setEventId(UUID.randomUUID().toString());</span>
+<span class="fc" id="L81">        event.setTransactionId(command.getTransactionId());</span>
+<span class="fc" id="L82">        event.setSourceAccountId(command.getSourceAccountId());</span>
+<span class="fc" id="L83">        event.setDestAccountId(command.getDestAccountId());</span>
+<span class="fc" id="L84">        event.setAmount(command.getAmount());</span>
+<span class="fc" id="L85">        event.setEventType(&quot;TRANSACTION_CREATED&quot;);</span>
+<span class="fc" id="L86">        event.setStatus(TransactionStatus.SUBMITTED);</span>
+<span class="fc" id="L87">        event.setEventData(JacksonUtil.toJson(command));</span>
+<span class="fc" id="L88">        event.setCreatedAt(new Timestamp(System.currentTimeMillis()));</span>
         // 保存事件
-<span class="fc" id="L88">        transactionEventFacadeService.save(event);</span>
+<span class="fc" id="L90">        transactionEventFacadeService.save(event);</span>
         // 发布事件
-<span class="fc" id="L90">        eventBus.publish(event);</span>
-<span class="fc" id="L91">    }</span>
+<span class="fc" id="L92">        eventBus.publish(event);</span>
+<span class="fc" id="L93">    }</span>
 
     /**
      * 更新交易状态为已处理。
+     *
      * @param transactionId 交易ID。
      */
     @Override
     @MethodLog
     public void changeTransactionProcessed(String transactionId) {
-        try{
-<span class="fc" id="L101">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.PROCESSED, StringUtils.EMPTY);</span>
-<span class="fc" id="L102">        } catch (Exception ex) {</span>
-<span class="fc" id="L103">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
-<span class="fc" id="L104">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
-<span class="fc" id="L105">        }</span>
-<span class="fc" id="L106">    }</span>
+        try {
+<span class="fc" id="L104">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.PROCESSED, StringUtils.EMPTY);</span>
+<span class="fc" id="L105">        } catch (Exception ex) {</span>
+<span class="fc" id="L106">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
+<span class="fc" id="L107">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
+<span class="fc" id="L108">        }</span>
+<span class="fc" id="L109">    }</span>
 
     /**
      * 更新交易状态为失败，并记录失败原因。
+     *
      * @param transactionId 交易ID
-     * @param failReason 失败原因
+     * @param failReason    失败原因
      */
     @Override
     @MethodLog
     public void changeTransactionFailed(String transactionId, String failReason) {
-        try{
-<span class="fc" id="L117">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.FAILED, failReason);</span>
-<span class="fc" id="L118">        } catch (Exception ex) {</span>
-<span class="fc" id="L119">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
-<span class="fc" id="L120">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
-<span class="fc" id="L121">        }</span>
+        try {
+<span class="fc" id="L121">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.FAILED, failReason);</span>
+<span class="fc" id="L122">        } catch (Exception ex) {</span>
+<span class="fc" id="L123">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
+<span class="fc" id="L124">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
+<span class="fc" id="L125">        }</span>
 
-<span class="fc" id="L123">    }</span>
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * 检查交易是否已经处理。
+     *
+     * @param transactionId 交易ID
+     * @return true 如果交易已经处理，false 否则
+     */
+    @Override
+    public Boolean checkTransactionProcessed(String transactionId) {
+        try {
+<span class="fc" id="L138">            Optional&lt;TransactionEvent&gt; transactionEvent = transactionEventFacadeService.findByTransactionId(transactionId);</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            if (transactionEvent.isEmpty()) {</span>
+<span class="fc" id="L140">                throw new TransactionNotFoundException(&quot;当前transactionId非法&quot;);</span>
+            }
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            return (transactionEvent.get().getStatus() != null</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                    &amp;&amp; transactionEvent.get().getStatus() == TransactionStatus.PROCESSED);</span>
+<span class="fc" id="L144">        } catch (TransactionNotFoundException ex) {</span>
+<span class="fc" id="L145">            log.error(&quot;当前transactionId非法&quot;, ex);</span>
+<span class="fc" id="L146">            throw ex;</span>
+<span class="fc" id="L147">        } catch (Exception ex) {</span>
+<span class="fc" id="L148">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
+<span class="fc" id="L149">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
+        }
+    }
 
     private void checkTransactionCommand(TransactionCommand command) throws IllegalArgumentException {
-<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (Objects.isNull(command)) {</span>
-<span class="fc" id="L127">            log.error(&quot;处理交易命令接口入参校验异常: command is null&quot;);</span>
-<span class="fc" id="L128">            throw new IllegalArgumentException(&quot;command is null&quot;);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (Objects.isNull(command)) {</span>
+<span class="fc" id="L155">            log.error(&quot;处理交易命令接口入参校验异常: command is null&quot;);</span>
+<span class="fc" id="L156">            throw new IllegalArgumentException(&quot;command is null&quot;);</span>
         }
-<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        if (StringUtils.isBlank(command.getSourceAccountId()) || StringUtils.isBlank(command.getDestAccountId())) {</span>
-<span class="fc" id="L131">            log.error(&quot;处理交易命令接口入参校验异常: accountId is null&quot;);</span>
-<span class="fc" id="L132">            throw new IllegalArgumentException(&quot;accountId is null&quot;);</span>
+<span class="pc bpc" id="L158" title="1 of 4 branches missed.">        if (StringUtils.isBlank(command.getSourceAccountId()) || StringUtils.isBlank(command.getDestAccountId())) {</span>
+<span class="fc" id="L159">            log.error(&quot;处理交易命令接口入参校验异常: accountId is null&quot;);</span>
+<span class="fc" id="L160">            throw new IllegalArgumentException(&quot;accountId is null&quot;);</span>
         }
-<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (command.getSourceAccountId().equals(command.getDestAccountId())) {</span>
-<span class="fc" id="L135">            log.error(&quot;处理交易命令接口入参校验异常: source accountId and destination accountId are the same&quot;);</span>
-<span class="fc" id="L136">            throw new IllegalArgumentException(&quot;source accountId and destination accountId are the same&quot;);</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (command.getSourceAccountId().equals(command.getDestAccountId())) {</span>
+<span class="fc" id="L163">            log.error(&quot;处理交易命令接口入参校验异常: source accountId and destination accountId are the same&quot;);</span>
+<span class="fc" id="L164">            throw new IllegalArgumentException(&quot;source accountId and destination accountId are the same&quot;);</span>
         }
-<span class="fc" id="L138">        Optional&lt;Account&gt; sourceAccount = accountFacadeService.findByAccountId(command.getSourceAccountId());</span>
-<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (sourceAccount.isEmpty()) {</span>
-<span class="fc" id="L140">            log.error(&quot;处理交易命令接口入参校验异常: source account not found&quot;);</span>
-<span class="fc" id="L141">            throw new IllegalArgumentException(&quot;source account not found&quot;);</span>
+<span class="fc" id="L166">        Optional&lt;Account&gt; sourceAccount = accountFacadeService.findByAccountId(command.getSourceAccountId());</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (sourceAccount.isEmpty()) {</span>
+<span class="fc" id="L168">            log.error(&quot;处理交易命令接口入参校验异常: source account not found&quot;);</span>
+<span class="fc" id="L169">            throw new IllegalArgumentException(&quot;source account not found&quot;);</span>
         }
-<span class="fc" id="L143">        Optional&lt;Account&gt; destAccount = accountFacadeService.findByAccountId(command.getDestAccountId());</span>
-<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (destAccount.isEmpty()) {</span>
-<span class="fc" id="L145">            log.error(&quot;处理交易命令接口入参校验异常: destination account not found&quot;);</span>
-<span class="fc" id="L146">            throw new IllegalArgumentException(&quot;destination account not found&quot;);</span>
+<span class="fc" id="L171">        Optional&lt;Account&gt; destAccount = accountFacadeService.findByAccountId(command.getDestAccountId());</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (destAccount.isEmpty()) {</span>
+<span class="fc" id="L173">            log.error(&quot;处理交易命令接口入参校验异常: destination account not found&quot;);</span>
+<span class="fc" id="L174">            throw new IllegalArgumentException(&quot;destination account not found&quot;);</span>
         }
         //设置当前时间戳
-<span class="fc" id="L149">        command.setTimestamp(new Timestamp(new Date().getTime()));</span>
-<span class="fc" id="L150">    }</span>
+<span class="fc" id="L177">        command.setTimestamp(new Timestamp(new Date().getTime()));</span>
+<span class="fc" id="L178">    }</span>
 }
 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
