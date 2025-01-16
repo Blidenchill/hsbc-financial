@@ -12,6 +12,7 @@ import com.hsbc.financial.domain.common.exception.BusinessException;
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
 import com.hsbc.financial.domain.common.exception.InsufficientBalanceException;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
+import com.hsbc.financial.domain.transaction.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
@@ -52,6 +53,11 @@ public class AccountServiceImpl implements AccountService {
     private final CacheService cacheService;
 
     /**
+     * 交易服务对象，用于在事务事件中处理交易相关操作。
+     */
+    private final TransactionService transactionService;
+
+    /**
      * 缓存键的前缀，用于区分不同类型的缓存数据。
      */
     private final static String RANGE = "account";
@@ -72,10 +78,13 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     public AccountServiceImpl(AccountFacadeService accountFacadeService,
                               AccountSnapshotFacadeService accountSnapshotFacadeService,
-                              CacheService cacheService) {
+                              CacheService cacheService,
+                              TransactionService transactionService) {
         this.accountFacadeService = accountFacadeService;
         this.accountSnapshotFacadeService = accountSnapshotFacadeService;
         this.cacheService = cacheService;
+        this.transactionService = transactionService;
+
     }
 
     /**
@@ -117,6 +126,7 @@ public class AccountServiceImpl implements AccountService {
             }
             // 4. 检查余额是否充足
             if (sourceAccount.getBalance().compareTo(command.getAmount()) < 0) {
+                log.warn("当前交易的原账户余额不足, transactionId={}", command.getTransactionId());
                 throw new InsufficientBalanceException("余额不足");
             }
             // 5. 更新余额
@@ -134,6 +144,8 @@ public class AccountServiceImpl implements AccountService {
             // 9.创建或更新快照
             createOrUpdateSnapshot(sourceAccount);
             createOrUpdateSnapshot(destAccount);
+            //10 更新交易表信息
+            transactionService.changeTransactionProcessed(command.getTransactionId());
         } catch (InfrastructureException e) {
             log.error("基础设施层数据库操作异常", e);
             throw new BusinessException("基础设施层数据库操作异常"); // 抛出异常以触发重试

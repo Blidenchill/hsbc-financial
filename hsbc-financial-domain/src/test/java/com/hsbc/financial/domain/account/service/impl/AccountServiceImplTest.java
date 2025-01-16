@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import com.hsbc.financial.domain.common.exception.BusinessException;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
 import java.util.Optional;
+
+import com.hsbc.financial.domain.transaction.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,6 +17,8 @@ import com.hsbc.financial.domain.account.facade.AccountSnapshotFacadeService;
 import com.hsbc.financial.domain.account.entity.Account;
 import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
 import com.hsbc.financial.domain.account.facade.AccountFacadeService;
+
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.mockito.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,8 +45,14 @@ public class AccountServiceImplTest {
 	@Mock
 	private AccountFacadeService accountFacadeService;
 
+    @Mock
+    private TransactionService transactionService;
 
 
+
+    /**
+     * 根据账户ID从缓存中获取账户信息。
+     */
     @Test
     public void testGetAccountByIdAccountInCache() {
         Account account = new Account();
@@ -54,6 +64,9 @@ public class AccountServiceImplTest {
         assertEquals("123", result.getAccountId());
     }
 
+    /**
+     * 测试获取账户ID不在缓存中的情况。
+     */
     @Test
     public void testGetAccountByIdAccountNotInCache() {
         Account account = new Account();
@@ -68,6 +81,10 @@ public class AccountServiceImplTest {
         assertEquals("123", result.getAccountId());
     }
 
+    /**
+     * 测试当账户ID不存在时，getAccountById方法是否抛出AccountNotFoundException异常。
+     * @throws AccountNotFoundException 如果账户ID不存在
+     */
     @Test
     public void testGetAccountByIdAccountNotFound() {
         when(cacheService.get(any(String.class))).thenReturn(null);
@@ -80,6 +97,9 @@ public class AccountServiceImplTest {
 
     }
 
+    /**
+     * 创建或更新账户快照，若账户不存在则创建新账户。
+     */
     @Test
     public void testCreateOrUpdateSnapshotNewAccount() {
         Account account = new Account();
@@ -93,6 +113,9 @@ public class AccountServiceImplTest {
         accountServiceImpl.createOrUpdateSnapshot(account);
     }
 
+    /**
+     * 创建或更新账户快照，覆盖已有的快照。
+     */
     @Test
     public void testCreateOrUpdateSnapshotExistingAccount() {
         AccountSnapshot latestSnapshot = new AccountSnapshot();
@@ -109,6 +132,9 @@ public class AccountServiceImplTest {
         accountServiceImpl.createOrUpdateSnapshot(account);
     }
 
+    /**
+     * 创建或更新账户快照，当最新的快照为空时。
+     */
     @Test
     public void testCreateOrUpdateSnapshotNullLatestSnapshot() {
         Account account = new Account();
@@ -122,6 +148,10 @@ public class AccountServiceImplTest {
         accountServiceImpl.createOrUpdateSnapshot(account);
     }
 
+    /**
+     * 测试在查找账户快照时抛出InfrastructureException的情况。
+     * @throws BusinessException 如果在创建或更新快照时发生错误。
+     */
     @Test
     public void testCreateOrUpdateSnapshotExceptionInFindTopByAccountId() {
         Account account = new Account();
@@ -136,9 +166,13 @@ public class AccountServiceImplTest {
 
     }
 
+    /**
+     * 测试更新账户余额，源账户有足够的余额。
+     */
     @Test
     public void testUpdateAccountBalancesSufficientBalance() {
         TransactionCommand command = new TransactionCommand();
+        command.setTransactionId(UUID.randomUUID().toString());
         command.setSourceAccountId("source123");
         command.setDestAccountId("dest456");
         command.setAmount(BigDecimal.TEN);
@@ -153,6 +187,7 @@ public class AccountServiceImplTest {
 
         when(accountFacadeService.findByAccountIdForUpdate("source123")).thenReturn(Optional.of(sourceAccount));
         when(accountFacadeService.findByAccountIdForUpdate("dest456")).thenReturn(Optional.of(destAccount));
+        doNothing().when(transactionService).changeTransactionProcessed(command.getTransactionId());
         // When
         accountServiceImpl.updateAccountBalances(command);
         // Then
@@ -161,6 +196,10 @@ public class AccountServiceImplTest {
     }
 
 
+    /**
+     * 测试在更新账户余额时，源账户不存在的情况。
+     * @throws AccountNotFoundException 如果源账户不存在，则抛出此异常。
+     */
     @Test
     public void testUpdateAccountBalancesSourceAccountNotFound() {
         TransactionCommand command = new TransactionCommand();
@@ -174,6 +213,10 @@ public class AccountServiceImplTest {
         });
     }
 
+    /**
+     * 测试在更新账户余额时目的账户不存在的情况。
+     * @throws AccountNotFoundException 如果目的账户不存在。
+     */
     @Test
     public void testUpdateAccountBalancesDestAccountNotFound() {
         TransactionCommand command = new TransactionCommand();
@@ -192,6 +235,10 @@ public class AccountServiceImplTest {
         });
     }
 
+    /**
+     * 测试在更新账户余额时抛出 DeadlockException 的情况。
+     * @throws BusinessException 如果在更新账户余额时发生业务异常。
+     */
     @Test
     public void testUpdateAccountBalancesDeadlockException() {
         TransactionCommand command = new TransactionCommand();
@@ -206,6 +253,10 @@ public class AccountServiceImplTest {
         });
     }
 
+    /**
+     * 测试更新账户余额时抛出其他异常的场景。
+     * @throws BusinessException 如果在更新账户余额过程中发生业务异常。
+     */
     @Test
     public void testUpdateAccountBalancesOtherException() {
         TransactionCommand command = new TransactionCommand();

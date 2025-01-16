@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 /**
  * TransactionRepository
  *
@@ -24,7 +26,7 @@ public interface TransactionEventRepository extends JpaRepository<TransactionEve
      * @param transactionId 交易ID。
      * @return 对应的交易事件。
      */
-    TransactionEvent findByTransactionId(String transactionId);
+    Optional<TransactionEvent> findByTransactionId(String transactionId);
 
     @Transactional
     @Modifying

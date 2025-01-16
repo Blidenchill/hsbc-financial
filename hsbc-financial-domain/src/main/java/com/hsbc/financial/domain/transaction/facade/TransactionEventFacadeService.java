@@ -3,6 +3,8 @@ package com.hsbc.financial.domain.transaction.facade;
 import com.hsbc.financial.domain.enums.TransactionStatus;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
 
+import java.util.Optional;
+
 /**
  * TransactionEventFacadeSerive
  *
@@ -18,4 +20,6 @@ public interface TransactionEventFacadeService {
     void save(TransactionEvent transactionEvent);
 
     void updateStatusByTransactionId(String transactionId, TransactionStatus status, String failReason);
+
+    Optional<TransactionEvent> findByTransactionId(String transactionId);
 }

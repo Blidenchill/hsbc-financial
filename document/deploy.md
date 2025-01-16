@@ -8,6 +8,8 @@
 
 ## 3. 镜像仓库
 在阿里云上创建私有镜像仓库, 用于存放我的应用实例镜像(镜像仓库名称:hsbc-financial).k8s集群部署通过拉取该镜像仓库镜像,实现在k8s上的应用部署.
+
+应用docker镜像仓库是 : registry.cn-hangzhou.aliyuncs.com/magnus/hsbc-financial:v1.0.5
 ![docker镜像仓库](./picture/docker-registry.png)
 
 ## 4. k8s部署配置

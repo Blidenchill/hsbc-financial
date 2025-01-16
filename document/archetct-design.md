@@ -1,4 +1,3 @@
-作为一名Java开发专家，我将根据您的需求，使用Spring Boot框架和MVC架构，设计并实现一个高并发的实时余额计算系统。该系统将采用事件溯源（Event Sourcing）和CQRS（命令查询职责分离）模式，并使用Kafka和Redis等中间件来提升性能和可扩展性。以下是详细的设计和实现：
 
 ## 一、数据库设计
 
@@ -119,6 +118,8 @@ public class Account {
     private Timestamp createdAt;
 
     private Timestamp updatedAt;
+    
+    private Boolean isDeleted;
 }
 ```
 
@@ -146,8 +147,16 @@ public class TransactionEvent {
 
     @Lob
     private String eventData;
+ 
+    @Enumerated(EnumType.ORDINAL)
+    private TransactionStatus status;
+    
+    private String failedReason;
 
     private Timestamp createdAt;
+
+    private Boolean isDeleted;
+    
 }
 ```
 
@@ -171,6 +180,8 @@ public class AccountSnapshot {
     private Long version;
 
     private Timestamp createdAt;
+
+    private Boolean isDeleted;
 }
 ```
 

@@ -1,9 +1,13 @@
 package com.hsbc.financial.application.listener;
 
 import com.hsbc.financial.domain.account.service.AccountService;
+import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
+import com.hsbc.financial.domain.common.exception.InsufficientBalanceException;
+import com.hsbc.financial.domain.common.exception.TransactionNotFoundException;
 import com.hsbc.financial.domain.common.utils.JacksonUtil;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
 import com.hsbc.financial.domain.transaction.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -21,6 +25,7 @@ import javax.transaction.Transactional;
  * @className TransactionEventListener
  **/
 @Component
+@Slf4j
 public class TransactionEventListener {
 
     /**
@@ -28,6 +33,9 @@ public class TransactionEventListener {
      */
     private final AccountService accountService;
 
+    /**
+     * 交易服务对象，用于在事务事件中处理交易相关操作。
+     */
     private final TransactionService transactionService;
 
     /**
@@ -70,15 +78,23 @@ public class TransactionEventListener {
      *
      * @param command 交易命令对象
      */
-    @Transactional
-    public void execute(TransactionCommand command) {
+    private void execute(TransactionCommand command) {
         try {
+            //幂等性校验,如果当前command已被处理, 则直接返回
+            if (transactionService.checkTransactionProcessed(command.getTransactionId())) {
+                return;
+            }
             accountService.updateAccountBalances(command);
-            //交易处理成功, 更新
-            transactionService.changeTransactionProcessed(command.getTransactionId());
-        } catch (Exception e) {
-            //交易处理异常, 更新
+        } catch (TransactionNotFoundException e) {
+            log.error("当前transactionId不存在, 请检查, command={}", JacksonUtil.toJson(command), e);
+        } catch (InsufficientBalanceException | AccountNotFoundException e) {
+            //当前余额不足, 业务账号不存在. 属于业务异常,mq不抛出重试.
             transactionService.changeTransactionFailed(command.getTransactionId(), e.getMessage());
+        } catch (Exception e) {
+            log.error("TransactionEventListener execute error", e);
+            //交易的其他异常, 先更新为失败, 然后抛出异常, 让mq重试.
+            transactionService.changeTransactionFailed(command.getTransactionId(), e.getMessage());
+            throw e;
         }
 
     }

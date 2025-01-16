@@ -17,6 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,10 +75,11 @@ public class TransactionControllerIntegrationTest {
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("交易已提交");
 
-        TransactionEvent transactionEvent = transactionEventRepository.findByTransactionId(command.getTransactionId());
-        assertThat(transactionEvent.getSourceAccountId()).isEqualTo(command.getSourceAccountId());
-        assertThat(transactionEvent.getDestAccountId()).isEqualTo(command.getDestAccountId());
-        assertThat(transactionEvent.getAmount()).isEqualTo(command.getAmount());
+        Optional<TransactionEvent> transactionEvent = transactionEventRepository.findByTransactionId(command.getTransactionId());
+        assertThat(transactionEvent.isPresent()).isTrue();
+        assertThat(transactionEvent.get().getSourceAccountId()).isEqualTo(command.getSourceAccountId());
+        assertThat(transactionEvent.get().getDestAccountId()).isEqualTo(command.getDestAccountId());
+        assertThat(transactionEvent.get().getAmount()).isEqualTo(command.getAmount());
         // 验证账户余额, 因为是异步更新,等待5秒
         Thread.sleep(5000L);
         Account afterSourceAccount = accountRepository.findByAccountId("source123").orElseThrow();

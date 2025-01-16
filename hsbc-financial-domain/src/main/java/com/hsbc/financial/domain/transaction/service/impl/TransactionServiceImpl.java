@@ -3,7 +3,9 @@ package com.hsbc.financial.domain.transaction.service.impl;
 import com.hsbc.financial.domain.account.entity.Account;
 import com.hsbc.financial.domain.account.facade.AccountFacadeService;
 import com.hsbc.financial.domain.common.aop.annotation.MethodLog;
+import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
 import com.hsbc.financial.domain.common.exception.BusinessException;
+import com.hsbc.financial.domain.common.exception.TransactionNotFoundException;
 import com.hsbc.financial.domain.common.utils.JacksonUtil;
 import com.hsbc.financial.domain.enums.TransactionStatus;
 import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
@@ -92,12 +94,13 @@ public class TransactionServiceImpl implements TransactionService {
 
     /**
      * 更新交易状态为已处理。
+     *
      * @param transactionId 交易ID。
      */
     @Override
     @MethodLog
     public void changeTransactionProcessed(String transactionId) {
-        try{
+        try {
             transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.PROCESSED, StringUtils.EMPTY);
         } catch (Exception ex) {
             log.error("当前数据库更新交易状态异常", ex);
@@ -107,19 +110,44 @@ public class TransactionServiceImpl implements TransactionService {
 
     /**
      * 更新交易状态为失败，并记录失败原因。
+     *
      * @param transactionId 交易ID
-     * @param failReason 失败原因
+     * @param failReason    失败原因
      */
     @Override
     @MethodLog
     public void changeTransactionFailed(String transactionId, String failReason) {
-        try{
+        try {
             transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.FAILED, failReason);
         } catch (Exception ex) {
             log.error("当前数据库更新交易状态异常", ex);
             throw new BusinessException("当前数据库更新交易状态异常");
         }
 
+    }
+
+    /**
+     * 检查交易是否已经处理。
+     *
+     * @param transactionId 交易ID
+     * @return true 如果交易已经处理，false 否则
+     */
+    @Override
+    public Boolean checkTransactionProcessed(String transactionId) {
+        try {
+            Optional<TransactionEvent> transactionEvent = transactionEventFacadeService.findByTransactionId(transactionId);
+            if (transactionEvent.isEmpty()) {
+                throw new TransactionNotFoundException("当前transactionId非法");
+            }
+            return (transactionEvent.get().getStatus() != null
+                    && transactionEvent.get().getStatus() == TransactionStatus.PROCESSED);
+        } catch (TransactionNotFoundException ex) {
+            log.error("当前transactionId非法", ex);
+            throw ex;
+        } catch (Exception ex) {
+            log.error("当前数据库更新交易状态异常", ex);
+            throw new BusinessException("当前数据库更新交易状态异常");
+        }
     }
 
     private void checkTransactionCommand(TransactionCommand command) throws IllegalArgumentException {

@@ -28,4 +28,11 @@ public interface TransactionService {
      * @param failReason 失败原因
      */
     void changeTransactionFailed(String transactionId, String failReason);
+
+    /**
+     * 检查指定交易是否已经处理完成。
+     * @param transactionId 交易ID
+     * @return true 如果交易已经处理完成，false 否则
+     */
+    Boolean checkTransactionProcessed(String transactionId);
 }

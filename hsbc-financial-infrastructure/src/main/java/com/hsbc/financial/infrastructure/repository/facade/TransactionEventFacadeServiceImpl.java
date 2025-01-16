@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * TransactionEventFacaseServiceImpl
  *
@@ -63,6 +65,16 @@ public class TransactionEventFacadeServiceImpl implements TransactionEventFacade
                 log.warn("未更新成功, 可能transactionId={}不存在", transactionId);
             }
 
+        } catch (Exception ex) {
+            log.error("当前数据库更新状态异常", ex);
+            throw new InfrastructureException("changeTransactionProcessed");
+        }
+    }
+
+    @Override
+    public Optional<TransactionEvent> findByTransactionId(String transactionId) {
+        try{
+            return transactionEventRepository.findByTransactionId(transactionId);
         } catch (Exception ex) {
             log.error("当前数据库更新状态异常", ex);
             throw new InfrastructureException("changeTransactionProcessed");

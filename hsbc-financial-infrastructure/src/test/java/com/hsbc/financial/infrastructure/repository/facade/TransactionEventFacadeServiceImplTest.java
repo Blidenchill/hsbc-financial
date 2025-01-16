@@ -7,6 +7,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
 import org.mockito.*;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 /**
@@ -43,6 +48,19 @@ public class TransactionEventFacadeServiceImplTest {
         assertThrows(InfrastructureException.class, () -> {
             transactionEventFacadeServiceImpl.save(transactionEvent);
         });
+    }
+
+    @Test
+    void testFindByTransactionId_Success() {
+        String transactionId = "testId";
+        TransactionEvent expectedEvent = new TransactionEvent();
+        when(transactionEventRepository.findByTransactionId(transactionId)).thenReturn(Optional.of(expectedEvent));
+
+        Optional<TransactionEvent> actualEvent = transactionEventFacadeServiceImpl.findByTransactionId(transactionId);
+
+        assertThat(actualEvent.isPresent()).isTrue();
+        assertEquals(expectedEvent, actualEvent.get());
+        verify(transactionEventRepository, times(1)).findByTransactionId(transactionId);
     }
 
 }
