@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionEventFacadeServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.infrastructure.repository.facade</a> &gt; <span class="el_source">TransactionEventFacadeServiceImpl.java</span></div><h1>TransactionEventFacadeServiceImpl.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.infrastructure.repository.facade;
+
+import com.hsbc.financial.domain.common.exception.InfrastructureException;
+import com.hsbc.financial.domain.enums.TransactionStatus;
+import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
+import com.hsbc.financial.domain.transaction.facade.TransactionEventFacadeService;
+import com.hsbc.financial.infrastructure.repository.TransactionEventRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * TransactionEventFacaseServiceImpl
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className TransactionEventFacaseServiceImpl
+ **/
+@Service
+<span class="fc" id="L20">@Slf4j</span>
+public class TransactionEventFacadeServiceImpl implements TransactionEventFacadeService {
+
+    /**
+     * 用于管理交易事件的数据访问对象。
+     */
+    private final TransactionEventRepository transactionEventRepository;
+
+    /**
+     * 构造TransactionEventFacadeServiceImpl实例并注入TransactionEventRepository。
+     * @param transactionEventRepository TransactionEventRepository对象，用于管理事务事件。
+     */
+    @Autowired
+<span class="fc" id="L33">    public TransactionEventFacadeServiceImpl(TransactionEventRepository transactionEventRepository) {</span>
+<span class="fc" id="L34">        this.transactionEventRepository = transactionEventRepository;</span>
+<span class="fc" id="L35">    }</span>
+
+    /**
+     * 保存交易事件
+     * @param transactionEvent 交易事件对象
+     */
+    @Override
+    public void save(TransactionEvent transactionEvent) {
+        try{
+<span class="fc" id="L44">            transactionEventRepository.save(transactionEvent);</span>
+<span class="fc" id="L45">        } catch (Exception ex) {</span>
+<span class="fc" id="L46">            log.error(&quot;当前数据库保存账号快照信息异常&quot;, ex);</span>
+<span class="fc" id="L47">            throw new InfrastructureException(&quot;当前数据库保存账号快照信息异常&quot;);</span>
+<span class="fc" id="L48">        }</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * 根据交易ID更新交易状态。
+     * @param transactionId 交易ID。
+     * @param status 新的交易状态。
+     */
+    @Override
+    public void updateStatusByTransactionId(String transactionId, TransactionStatus status, String failReason) {
+        try{
+<span class="nc" id="L59">            int updateNum = transactionEventRepository.updateStatusByTransactionId(transactionId, status, failReason);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if(updateNum &gt; 0) {</span>
+<span class="nc" id="L61">                log.info(&quot;根据交易ID更新交易状态成功, transactionId={}, status={}&quot;, transactionId, status);</span>
+            } else {
+<span class="nc" id="L63">                log.warn(&quot;未更新成功, 可能transactionId={}不存在&quot;, transactionId);</span>
+            }
+
+<span class="nc" id="L66">        } catch (Exception ex) {</span>
+<span class="nc" id="L67">            log.error(&quot;当前数据库更新状态异常&quot;, ex);</span>
+<span class="nc" id="L68">            throw new InfrastructureException(&quot;changeTransactionProcessed&quot;);</span>
+<span class="nc" id="L69">        }</span>
+<span class="nc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

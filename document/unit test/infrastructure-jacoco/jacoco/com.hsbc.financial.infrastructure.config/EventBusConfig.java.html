@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventBusConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.infrastructure.config</a> &gt; <span class="el_source">EventBusConfig.java</span></div><h1>EventBusConfig.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.infrastructure.config;
+
+import com.hsbc.financial.domain.transaction.event.EventBus;
+import com.hsbc.financial.infrastructure.mq.KafkaEventBus;
+import com.hsbc.financial.infrastructure.mq.LocalEventBus;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.KafkaTemplate;
+
+/**
+ * EventBusConfig
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className EventBusConfig
+ **/
+@Configuration
+<span class="nc" id="L19">class EventBusConfig {</span>
+
+    /**
+     * 创建本地事件总线实例。
+     * 当 'event.bus.type' 属性的值为 'local' 或未定义时，会调用此方法。
+     */
+    @Bean
+    @ConditionalOnProperty(name = &quot;event.bus.type&quot;, havingValue = &quot;local&quot;, matchIfMissing = true)
+    public EventBus localBus() {
+<span class="nc" id="L28">        return new LocalEventBus();</span>
+    }
+
+    /**
+     * 在事件总线类型为 Kafka 时，创建并返回一个 KafkaEventBus 实例。
+     * @return 一个 KafkaEventBus 实例。
+     */
+    @Bean
+    @ConditionalOnProperty(name = &quot;event.bus.type&quot;, havingValue = &quot;kafka&quot;)
+    public EventBus kafkaBus(KafkaTemplate&lt;String, String&gt; kafkaTemplate) {
+<span class="nc" id="L38">        return new KafkaEventBus(kafkaTemplate);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountSnapshot.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.account.entity</a> &gt; <span class="el_source">AccountSnapshot.java</span></div><h1>AccountSnapshot.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.account.entity;
+
+import lombok.Data;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+
+/**
+ * AccountSnapshot
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className AccountSnapshot
+ **/
+@Entity
+@Table(name = &quot;account_snapshots&quot;)
+<span class="pc bnc" id="L23" title="All 62 branches missed.">@Data</span>
+public class AccountSnapshot {
+    /**
+     * 主键ID，自增生成。
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="nc" id="L30">    private Long id;</span>
+
+    /**
+     * 唯一标识符，用于区分不同的账户快照。
+     */
+    @Column(unique = true, nullable = false)
+<span class="nc" id="L36">    private String snapshotId;</span>
+
+    /**
+     * 账户ID，关联到具体的账户实体。
+     */
+<span class="nc" id="L41">    private String accountId;</span>
+
+    /**
+     * 当前账户的余额。
+     */
+<span class="nc" id="L46">    private BigDecimal balance;</span>
+
+    /**
+     * 版本号，用于乐观锁机制，防止并发更新。
+     */
+<span class="fc" id="L51">    private Long version;</span>
+
+    /**
+     * 创建时间戳，记录账户快照的创建时间。
+     */
+<span class="nc" id="L56">    private Timestamp createdAt;</span>
+
+    /**
+     * 标记该账户快照是否已被删除。
+     */
+<span class="nc" id="L61">    private Boolean isDeleted;</span>
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,10 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.cache,RedissonCacheService,0,67,0,4,0,18,0,7,0,5
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.repository.facade,AccountFacadeServiceImpl,0,69,0,0,0,21,0,5,0,5
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.repository.facade,AccountSnapshotFacadeServiceImpl,0,42,0,0,0,14,0,4,0,4
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.repository.facade,TransactionEventFacadeServiceImpl,31,27,2,0,9,10,2,3,1,3
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.config,AsyncConfig,23,0,0,0,8,0,2,0,2,0
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.config,RedissonConfig,42,0,2,0,8,0,3,0,2,0
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.config,EventBusConfig,12,0,0,0,3,0,3,0,3,0
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.mq,LocalEventBus,5,29,1,5,1,7,1,4,0,2
+hsbc-financial-infrastructure,com.hsbc.financial.infrastructure.mq,KafkaEventBus,0,17,0,0,0,5,0,2,0,2

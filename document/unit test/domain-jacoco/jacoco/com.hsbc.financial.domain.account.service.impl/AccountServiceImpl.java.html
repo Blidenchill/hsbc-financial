@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.account.service.impl</a> &gt; <span class="el_source">AccountServiceImpl.java</span></div><h1>AccountServiceImpl.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.account.service.impl;
+
+import com.hsbc.financial.domain.account.entity.Account;
+import com.hsbc.financial.domain.account.entity.AccountSnapshot;
+import com.hsbc.financial.domain.account.facade.AccountFacadeService;
+import com.hsbc.financial.domain.account.facade.AccountSnapshotFacadeService;
+import com.hsbc.financial.domain.account.service.AccountService;
+import com.hsbc.financial.domain.common.aop.annotation.MethodLog;
+import com.hsbc.financial.domain.common.cache.CacheService;
+import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
+import com.hsbc.financial.domain.common.exception.BusinessException;
+import com.hsbc.financial.domain.common.exception.InfrastructureException;
+import com.hsbc.financial.domain.common.exception.InsufficientBalanceException;
+import com.hsbc.financial.domain.transaction.command.TransactionCommand;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
+import java.sql.Timestamp;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * AccountServiceImpl
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className AccountServiceImpl
+ **/
+@Service
+<span class="fc" id="L36">@Slf4j</span>
+public class AccountServiceImpl implements AccountService {
+
+    /**
+     * 账户服务的Facade接口，提供账户相关的业务逻辑操作。
+     */
+    private final AccountFacadeService accountFacadeService;
+
+    /**
+     * 账户快照服务的Facade接口，提供账户快照相关的业务逻辑操作。
+     */
+    private final AccountSnapshotFacadeService accountSnapshotFacadeService;
+
+    /**
+     * 负责管理和操作缓存数据的服务。
+     */
+    private final CacheService cacheService;
+
+    /**
+     * 缓存键的前缀，用于区分不同类型的缓存数据。
+     */
+    private final static String RANGE = &quot;account&quot;;
+
+    /**
+     * 缓存数据的过期时间，单位为天。
+     */
+    private final static long EXPIRATION_DAY = 1L;
+
+
+    /**
+     * 构造函数，初始化AccountServiceImpl的依赖服务。
+     *
+     * @param accountFacadeService         账户操作接口服务
+     * @param accountSnapshotFacadeService 账户快照操作接口服务
+     * @param cacheService                 缓存服务
+     */
+    @Autowired
+    public AccountServiceImpl(AccountFacadeService accountFacadeService,
+                              AccountSnapshotFacadeService accountSnapshotFacadeService,
+<span class="fc" id="L75">                              CacheService cacheService) {</span>
+<span class="fc" id="L76">        this.accountFacadeService = accountFacadeService;</span>
+<span class="fc" id="L77">        this.accountSnapshotFacadeService = accountSnapshotFacadeService;</span>
+<span class="fc" id="L78">        this.cacheService = cacheService;</span>
+<span class="fc" id="L79">    }</span>
+
+    /**
+     * 更新账户余额并创建或更新快照。
+     *
+     * @param command TransactionCommand 对象，包含源账户ID、目标账户ID和转账金额。
+     * @throws AccountNotFoundException     如果源账户ID或目标账户ID不存在。
+     * @throws InsufficientBalanceException 如果源账户余额不足。
+     * @throws BusinessException              如果在更新账户时出现死锁异常或其他未知异常。
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Retryable(
+            value = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
+    @Override
+    @MethodLog
+    public void updateAccountBalances(TransactionCommand command) {
+        try {
+            // 1. 获取源账户和目标账户的ID，并排序, 为了方式发生死锁
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            String firstAccountId = command.getSourceAccountId().compareTo(command.getDestAccountId()) &lt; 0 ?</span>
+<span class="pc" id="L101">                    command.getSourceAccountId() : command.getDestAccountId();</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            String secondAccountId = command.getSourceAccountId().compareTo(command.getDestAccountId()) &gt; 0 ?</span>
+<span class="pc" id="L103">                    command.getSourceAccountId() : command.getDestAccountId();</span>
+            // 2. 按照ID顺序获取并锁定账户
+<span class="fc" id="L105">            Account firstAccount = accountFacadeService.findByAccountIdForUpdate(firstAccountId)</span>
+<span class="fc" id="L106">                    .orElseThrow(() -&gt; new AccountNotFoundException(&quot;账户ID不存在&quot;));</span>
+<span class="fc" id="L107">            Account secondAccount = accountFacadeService.findByAccountIdForUpdate(secondAccountId)</span>
+<span class="pc" id="L108">                    .orElseThrow(() -&gt; new AccountNotFoundException(&quot;账户ID不存在&quot;));</span>
+            // 3. 根据实际情况判断 source 和 destination
+            Account sourceAccount, destAccount;
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (firstAccount.getAccountId().equals(command.getSourceAccountId())) {</span>
+<span class="nc" id="L112">                sourceAccount = firstAccount;</span>
+<span class="nc" id="L113">                destAccount = secondAccount;</span>
+            } else {
+<span class="fc" id="L115">                sourceAccount = secondAccount;</span>
+<span class="fc" id="L116">                destAccount = firstAccount;</span>
+            }
+            // 4. 检查余额是否充足
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (sourceAccount.getBalance().compareTo(command.getAmount()) &lt; 0) {</span>
+<span class="nc" id="L120">                throw new InsufficientBalanceException(&quot;余额不足&quot;);</span>
+            }
+            // 5. 更新余额
+<span class="fc" id="L123">            sourceAccount.setBalance(sourceAccount.getBalance().subtract(command.getAmount()));</span>
+<span class="fc" id="L124">            destAccount.setBalance(destAccount.getBalance().add(command.getAmount()));</span>
+            // 6. 更新更新时间
+<span class="fc" id="L126">            sourceAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));</span>
+<span class="fc" id="L127">            destAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));</span>
+            // 7. 保存账户
+<span class="fc" id="L129">            accountFacadeService.save(sourceAccount);</span>
+<span class="fc" id="L130">            accountFacadeService.save(destAccount);</span>
+            // 8. 更新缓存
+<span class="fc" id="L132">            cacheService.add(cacheService.generateKey(RANGE, sourceAccount.getAccountId()), sourceAccount, EXPIRATION_DAY, TimeUnit.DAYS);</span>
+<span class="fc" id="L133">            cacheService.add(cacheService.generateKey(RANGE, destAccount.getAccountId()), destAccount, EXPIRATION_DAY, TimeUnit.DAYS);</span>
+            // 9.创建或更新快照
+<span class="fc" id="L135">            createOrUpdateSnapshot(sourceAccount);</span>
+<span class="fc" id="L136">            createOrUpdateSnapshot(destAccount);</span>
+<span class="nc" id="L137">        } catch (InfrastructureException e) {</span>
+<span class="nc" id="L138">            log.error(&quot;基础设施层数据库操作异常&quot;, e);</span>
+<span class="nc" id="L139">            throw new BusinessException(&quot;基础设施层数据库操作异常&quot;); // 抛出异常以触发重试</span>
+<span class="nc" id="L140">        } catch (InsufficientBalanceException e) {</span>
+<span class="nc" id="L141">            log.error(&quot;当前原账户余额不足&quot;, e);</span>
+<span class="nc" id="L142">            throw e;</span>
+<span class="fc" id="L143">        } catch (AccountNotFoundException e) {</span>
+<span class="fc" id="L144">            log.error(e.getMessage(), e);</span>
+<span class="fc" id="L145">            throw e;</span>
+<span class="fc" id="L146">        } catch (Exception e) {</span>
+<span class="fc" id="L147">            log.error(&quot;当前业务出现其他异常&quot;, e);</span>
+<span class="fc" id="L148">            throw new BusinessException(&quot;当前业务出现其他异常&quot;);</span>
+<span class="fc" id="L149">        }</span>
+<span class="fc" id="L150">    }</span>
+
+    /**
+     * 根据账户ID获取账户信息。
+     *
+     * @param accountId 账户ID
+     * @return 对应的账户对象
+     */
+    @Override
+    @MethodLog
+    public Account getAccountById(String accountId) {
+        // 先从缓存中获取
+<span class="fc" id="L162">        Account account = cacheService.get(cacheService.generateKey(RANGE, accountId));</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (account == null) {</span>
+            // 缓存中没有，从数据库获取并缓存
+<span class="fc" id="L165">            account = accountFacadeService.findByAccountId(accountId)</span>
+<span class="fc" id="L166">                    .orElseThrow(() -&gt; new AccountNotFoundException(&quot;账户不存在&quot;));</span>
+<span class="fc" id="L167">            cacheService.add(cacheService.generateKey(RANGE, accountId), account, EXPIRATION_DAY, TimeUnit.DAYS);</span>
+        }
+<span class="fc" id="L169">        return account;</span>
+    }
+
+    /**
+     * 创建或更新账户快照。
+     *
+     * @param account 账户对象，包含账户信息。
+     */
+    @Override
+    @MethodLog
+    public void createOrUpdateSnapshot(Account account) {
+        try {
+            // 获取当前最新版本号
+<span class="fc" id="L182">            long version = 1;</span>
+<span class="fc" id="L183">            Optional&lt;AccountSnapshot&gt; latestSnapshotOpt = accountSnapshotFacadeService</span>
+<span class="fc" id="L184">                    .findTopByAccountIdOrderByVersionDesc(account.getAccountId());</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (latestSnapshotOpt.isPresent()) {</span>
+<span class="fc" id="L186">                version = latestSnapshotOpt.get().getVersion() + 1;</span>
+            }
+
+            // 创建新的快照
+<span class="fc" id="L190">            AccountSnapshot snapshot = new AccountSnapshot();</span>
+<span class="fc" id="L191">            snapshot.setSnapshotId(UUID.randomUUID().toString());</span>
+<span class="fc" id="L192">            snapshot.setAccountId(account.getAccountId());</span>
+<span class="fc" id="L193">            snapshot.setBalance(account.getBalance());</span>
+<span class="fc" id="L194">            snapshot.setVersion(version);</span>
+<span class="fc" id="L195">            snapshot.setCreatedAt(new Timestamp(System.currentTimeMillis()));</span>
+
+            // 保存快照
+<span class="fc" id="L198">            accountSnapshotFacadeService.save(snapshot);</span>
+<span class="fc" id="L199">        } catch (InfrastructureException ex) {</span>
+<span class="fc" id="L200">            log.error(ex.getMessage(), ex);</span>
+<span class="fc" id="L201">            throw new BusinessException(&quot;创建快照时,数据库操作异常&quot;);</span>
+<span class="fc" id="L202">        }</span>
+
+<span class="fc" id="L204">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,45 +1,38 @@
-# 基于DDD的应用脚手架
+# HSBC-TES项目说明
 
-应用架构的核心要素就是如何把代码组织起来，处理模块(module)， 组件， 包， 类之间
-的关系。
+本项目为试验工程。本工程以Springboot2.7 + JDK17为基础开发。
 
 
-## 分层明细说明
+## 工程结构
 ```yaml
 --root
-    --application: 应用层是程序的入口，整合和组合domain提供的能力。
-        --rpc: JSF provider对外提供的接口实现
+    --application: 应用层是程序的入口
         --controller: springMVC提供的controller
         --listener: MQ消息监听器
-        --task: 调度任务
         --translate: 将内部的BO映射为外部的VO/Entity
         --model: VO对象
-    --adapter: 适配器层（依赖domain层）
-       --rpc: JSF consumer，外部服务
-       --mq: 消息队列sender模块
-       --translate: 将外部数据结构映射为内部的DTO/BO
     --domain: 领域层
-       --service: 领域服务可以按照自己情况灵活设计
-       --facotry: 工厂
-       --query/command: CRQS模式
-       --event: 事件
-       --model: 对象和实体
-       --translate: 对象实体映射转换
-       --facade: 针对adpater和infrastructre层的接口定义
+       --account: 用户账号子域
+          --entity: 账号实体
+          --service: service服务
+          --facade: 针对infrastructure层的接口定义, 实现控制反转
+       --transaction: 交易信息子域
+          --entity: 交易信息实体
+          --command: 定义交易指令command对象
+          --event: 定义交易事件
+          --service: service服务
+          --facade: 针对infrastructure层的接口定义, 实现控制反转
+       --common: 公共包
+          --aop: 切面实现
+          --cache: 缓存定义, 控制反转,实现在infrastracture层
+          --exception: 异常定义
+          --util: 常用工具类
     --infrastructure: (依赖domain层)
        --repository: 持久化层，包括db模型，sql读写等
        --cache: Redis缓存读写
        --producer: MQ消息生成，即发送MQ消息。
        --config: 配置信息，例如ducc配置、数据库、缓存配置等
-       --translate: 将存储层的数据结构PO映射为内部的BO
-       --utils: 工具集合
-       --common: 公共层
-        --exception: 异常主要分为业务异常和系统异常。系统异常需要研发处理。业务异常需要具备监控能力。
-        --utils: 工具类
-        --enums: 枚举类
-        --constant: 全局公共常量池
-    --worker: 异步服务启动
-    --client: jsf SDK
+       --mq: 消息实现
 ```
 
 ## 架构层级说明
@@ -47,63 +40,42 @@
 应用层是DDD中的顶层，负责协调和组织领域对象的交互。它接收来自用户界面或外部系统的请求，并将其转发给领域层进行处理。应用层负责定义应用的用例（Use Cases），处理事务边界和协调领域对象的操作。它不包含业务逻辑，而是将请求转化为领域对象的操作。应用层还可以包含获取输入，组装上下文，参数校验，异常定义，发送事件通知等。<br>
 ### Domain层
 主要是封装了核心业务逻辑，并通过领域服务（Domain Service）和领域对象（Domain Entity）的方法对App层提供业务实体和业务逻辑计算。领域是应用的核心，不依赖任何其他层次。同时领域层会有一个facade层，当领域服务对外部有调用依赖时，通过定义facade接口实现控制反转。<br>
-### Adapter层
-负责与外部系统进行或者服务进行适配和集成，包括通信，数据缓存，接口适配等功能。<br>
-此外强调， RPC consumer调用放在适配器层。适配器层专注于与外部系统的集成和适配，将外部系统的接口和数据格式转换为应用程序可以理解和处理的形式。将RPC调用放在适配器层可以更好地将与外部系统相关的技术细节与应用程序的业务逻辑和领域对象进行解耦，提高应用程序的可扩展性和可维护性。<br>
-对于所有出站适配层，都需要通过实现facade接口实现控制反转。<br>
 ### 基础设施层(Infrastructure)
 负责提供支持应用程序运行的基础设施，包括与具体技术相关的实现。基础设施层通常包括与数据库、消息队列、缓存、外部服务等进行交互的代码，以及一些通用的工具类和配置，也包括filter等实现。<br>
-基础设施层和适配器层之间的关系是：<br>
-基础设施层提供了与具体技术相关的实现，例如数据库访问、消息队列连接、缓存操作等。适配器层可以使用基础设施层提供的功能来与外部系统进行交互。<br>
-适配器层通过适配器模式或类似的机制，将外部系统的接口和数据格式转换为应用程序可以理解和处理的形式。适配器层还负责将应用程序的请求转发给基础设施层进行具体的操作。<br>
-基础设施层和适配器层一起工作，使得应用程序能够与外部系统进行集成，并且将与外部系统相关的技术细节与应用程序的业务逻辑和领域对象进行解耦。这样可以实现应用程序的可扩展性、可维护性和可测试性。<br>
-对于一些无复杂逻辑的，也可以直接让上游掉基础设施层，不必一定通过Adapter层。<br>
+### 依赖关系
+![脚手架关系依赖图](./document/picture/scafford-dependence.png)
+因为本次工程不涉及adapter层,所以删除.
 
-### 异步服务
-我们提倡异步任务单独拆分出来，作为独立服务进行部署，例如异步任务和异步消息处理等。 worker module可以单独启动。
+## 系统详细设计
+本业务场景涉及内容包括核心域account和transaction，其中account是用户账号子域，transaction是交易信息子域。同时还采用了消息队列和缓存的方式增加并发能力,具体设计方案请点击下面链接:
+### [系统详细设计说明.md](./document/archetct-design.md)
 
-###
+## 部署说明
+本工程部署在阿里云的ACK中,中间件用的是阿里云的云RDS和云kafka, redis因为只是缓存需要, 自建在k8s之中,通过容器化部署.具体部署说明期刊如下文档:
 
-### 小结
-本框架是结合了DDD思想和六边形架构思想，经过小组内兄弟们的的反馈意见，整理出符合大家开发习惯，同时有有利于模块解耦及协同开发的脚手架。该脚手架不会限制大家能力和发挥。<br>
-如果你精通DDD，你可以在domain层采用标准的充血模型和子域拆分模式编写你的代码； 如果你精通MVC，该框架也可以简化为大家熟悉的MVC开发模式。对于model的处理，也可灵活应对，在不影响整体代码架构的情况下，允许不过度设计及对象多度封装，鼓励敏捷迭代和定期重构。<br>
-但有一个核心思想希望大家谨记：***我们尽量保证我们的代码开发符合开闭原则，能够通过增加类和方法的方式实现新功能迭代，尽量就要避免频繁修改某个方法或者某个类。***<br>
-最后也给大家一个DDD应用架构的介绍文档。文档链接：https://joyspace.jd.com/pages/9L8iYWtUJkG8EwnVhvKz
+### [部署说明.md](./document/deploy.md)
 
-## maven私服脚手架下载脚本
+## 测试说明
+### 1. 单元测试和集成测试.
+在代码工程中,所有核心接口及核心业务逻辑都进行了单元测试和集成测试.
+其中domain层中, 最核心的AccountService和TransactionService都进行了单元测试, 测试覆盖率达到了100%.
+infrastructure层中, facade实现类, redisson实现类,MQ消息发送都进行了单元测试, 测试覆盖率达到了100%.
+application层, TransactionController对外的服务接口,实现了100%的集成测试.
 
-```sh
-mvn archetype:generate \
-            -DarchetypeGroupId=com.jd.magnus \
-            -DarchetypeArtifactId=magnus-multi-ddd-archetype \
-            -DarchetypeVersion=1.0.0-SNAPSHOT \
-            -DinteractiveMode=false \
-            -DarchetypeCatalog=remote \
-            -Dversion=1.0.0-SNAPSHOT \
-            -DgroupId=com.jdl.sps \
-            -DartifactId=bff-demo1
-```
+### 2. 压力测试
+本工程采用jmeter对核心服务进行压力测试.其中为了更方便的进行压力测试,进行了如下前期准备工作:
+1. 引入的faker组件, 用于生成模拟测试数据.前期,通过faker生成50个用户账号信息,然后通过faker模拟随机交易信息.
+2. 封装了一个压力测试接口, /pressure/test/transaction,  该接口可以做到随机选择50个用户账号信息中的两个, 进行模拟交易.
+#### 压测场景说明
+1. 实例资源为k8s中部署两个应用实例, 每个应用实例的资源限制为1C2G.
+2. k8s集群公网IP申请的网络带宽为1Mbps.
+3. 压测设置: 模拟1000个用户并发, 升压时间设为1s,模拟瞬间大流量的场景, 持续发送50轮次.
+#### 压测结果
+压测结果详情可以查看./document/jmeter文件夹下的内容.对于压测结果做以下几点说明:
+1. 本次压测共产生50000条交易记录,其中失败了179, 失败原因全部是请求超时. 
+2. 结合cpu, 内存和network的监控看板得出结论:此次压测的瓶颈在网络带宽, 在请求流量高峰时刻, 部分请求因为网络带宽不足,导致连接超时.
+- **[查看 JMeter 测试结果详情](./document/jmeter)**
 
-## client module SDK打包推送远端仓库建议和说明
-文档标题：项目版本管理和自动化发版推仓流程方法<br>
-文档链接：https://joyspace.jd.com/pages/9jYvX2tJFZJiBpYfQTvd
 
-## 代码评审规范说明和建议
-文档标题：2 代码评审规范<br>
-文档链接：https://joyspace.jd.com/pages/iPKIOoBDEMGhGKBtrW9t
-
-## git分支管理和流水线配置说明和建议
-文档标题：Git分支管理及代码评审流程梳理<br>
-文档链接：https://joyspace.jd.com/pages/nVhGe0PuYGEOfB4wN0fw
-
-## 本工程spring配置文件管理和加载说明
-文档标题：Spring工程打包统一镜像技术方案<br>
-文档链接：https://joyspace.jd.com/pages/pxfEOGTHwhvGMoCDkLju
-
-# 联系我们
-* 作者ERP: zhaoyongping8
-
-## 开源协议
-F开源采用内部开源协议，详情[LICENSE](https://joyspace.jd.com/page/QLHIIOzLazLROBMjsyG0)
 
 

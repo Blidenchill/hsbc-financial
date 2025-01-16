@@ -57,7 +57,7 @@ public class KafkaEventBusTest {
         event.setEventId("event_id_1");
         event.setEventData("event_data_1");
 
-        when(kafkaTemplate.send(any(String.class), any(String.class), any(String.class)))
+        lenient().when(kafkaTemplate.send(any(String.class), any(String.class), any(String.class)))
                 .thenReturn(new ListenableFuture<SendResult<String, String>>() {
                     @Override
                     public boolean cancel(boolean mayInterruptIfRunning) {

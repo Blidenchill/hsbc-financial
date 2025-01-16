@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MethodLogAspect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.common.aop.aspect</a> &gt; <span class="el_source">MethodLogAspect.java</span></div><h1>MethodLogAspect.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.common.aop.aspect;
+
+import com.hsbc.financial.domain.common.utils.JacksonUtil;
+import lombok.extern.log4j.Log4j2;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
+
+/**
+ * MethodLogAspect
+ *
+ * @author zhaoyongping
+ * @date 2023/11/8 15:26
+ * @className MethodLogAspect
+ **/
+<span class="nc" id="L18">@Log4j2</span>
+@Aspect
+@Component
+<span class="nc" id="L21">public class MethodLogAspect {</span>
+    /**
+     * 在方法调用前记录日志信息。
+     * @param joinPoint 切入点对象，用于获取被调用的方法信息和参数。
+     */
+    @Before(&quot;@annotation(com.hsbc.financial.domain.common.aop.annotation.MethodLog)&quot;)
+    public void logMethodCall(JoinPoint joinPoint) {
+<span class="nc" id="L28">        String methodName = joinPoint.getSignature().getName();</span>
+<span class="nc" id="L29">        String packageName = joinPoint.getSignature().getDeclaringTypeName();</span>
+<span class="nc" id="L30">        Object[] args = joinPoint.getArgs();</span>
+<span class="nc" id="L31">        StringBuilder builder = new StringBuilder(&quot;Entering method:&quot;);</span>
+<span class="nc" id="L32">        builder.append(packageName);</span>
+<span class="nc" id="L33">        builder.append(&quot;.&quot;);</span>
+<span class="nc" id="L34">        builder.append(methodName);</span>
+<span class="nc" id="L35">        builder.append(&quot;;&quot;);</span>
+<span class="nc" id="L36">        builder.append(&quot;入参：&quot;);</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        for (Object item : args) {</span>
+<span class="nc" id="L38">            builder.append(item);</span>
+<span class="nc" id="L39">            builder.append(&quot;,&quot;);</span>
+        }
+<span class="nc" id="L41">        log.info(builder.toString());</span>
+
+<span class="nc" id="L43">    }</span>
+
+    @AfterReturning(pointcut = &quot;@annotation(com.hsbc.financial.domain.common.aop.annotation.MethodLog)&quot;, returning = &quot;result&quot;)
+    public void logMethodReturn(JoinPoint joinPoint, Object result) {
+<span class="nc" id="L47">        String methodName = joinPoint.getSignature().getName();</span>
+<span class="nc" id="L48">        String packageName = joinPoint.getSignature().getDeclaringTypeName();</span>
+<span class="nc" id="L49">        StringBuilder builder = new StringBuilder(&quot;Exiting method:&quot;);</span>
+<span class="nc" id="L50">        builder.append(packageName);</span>
+<span class="nc" id="L51">        builder.append(&quot;.&quot;);</span>
+<span class="nc" id="L52">        builder.append(methodName);</span>
+<span class="nc" id="L53">        builder.append(&quot;;&quot;);</span>
+<span class="nc" id="L54">        builder.append(&quot;结果：&quot;);</span>
+<span class="nc" id="L55">        builder.append(JacksonUtil.toJson(result));</span>
+<span class="nc" id="L56">        log.info(builder.toString());</span>
+<span class="nc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

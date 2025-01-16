@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionEventListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-application</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.application.listener</a> &gt; <span class="el_source">TransactionEventListener.java</span></div><h1>TransactionEventListener.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.application.listener;
+
+import com.hsbc.financial.domain.account.service.AccountService;
+import com.hsbc.financial.domain.common.utils.JacksonUtil;
+import com.hsbc.financial.domain.transaction.command.TransactionCommand;
+import com.hsbc.financial.domain.transaction.service.TransactionService;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import javax.transaction.Transactional;
+
+/**
+ * TransactionEventListener
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className TransactionEventListener
+ **/
+@Component
+public class TransactionEventListener {
+
+    /**
+     * 账户服务对象，用于更新账户余额。
+     */
+    private final AccountService accountService;
+
+    /**
+     * 交易服务对象，用于在事务事件中处理交易相关操作。
+     */
+    private final TransactionService transactionService;
+
+    @Value(&quot;${event.bus.kafka.topic}&quot;)
+    private String kafkaTopic;
+
+    /**
+     * 构造函数，用于初始化TransactionEventListener对象。
+     *
+     * @param accountService 账户服务对象，用于在事务事件中处理账户相关操作。
+     */
+    @Autowired
+<span class="fc" id="L46">    public TransactionEventListener(AccountService accountService, TransactionService transactionService) {</span>
+<span class="fc" id="L47">        this.accountService = accountService;</span>
+<span class="fc" id="L48">        this.transactionService = transactionService;</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * 从 Kafka 订阅的 'transaction-events' 主题中处理交易事件。
+     *
+     * @param record 包含交易事件数据的 ConsumerRecord 对象。
+     */
+    @KafkaListener(topics = &quot;transaction-events&quot;)
+    public void kafkaHandleEvent(ConsumerRecord&lt;String, String&gt; record) {
+        // 解析事件数据
+<span class="nc" id="L59">        String eventData = record.value();</span>
+<span class="nc" id="L60">        TransactionCommand command = JacksonUtil.fromJson(eventData, TransactionCommand.class);</span>
+<span class="nc" id="L61">        execute(command);</span>
+<span class="nc" id="L62">    }</span>
+
+    /**
+     * 异步处理交易命令事件
+     *
+     * @param transactionCommand 交易命令对象
+     */
+    @Async(&quot;eventTaskExecutor&quot;)
+    @EventListener
+    public void localHandleEvent(TransactionCommand transactionCommand) {
+<span class="nc" id="L72">        execute(transactionCommand);</span>
+<span class="nc" id="L73">    }</span>
+
+    /**
+     * 执行交易命令，更新账户余额。
+     *
+     * @param command 交易命令对象
+     */
+    @Transactional
+    public void execute(TransactionCommand command) {
+        try {
+<span class="nc" id="L83">            accountService.updateAccountBalances(command);</span>
+            //交易处理成功, 更新
+<span class="nc" id="L85">            transactionService.changeTransactionProcessed(command.getTransactionId());</span>
+<span class="nc" id="L86">        } catch (Exception e) {</span>
+            //交易处理异常, 更新
+<span class="nc" id="L88">            transactionService.changeTransactionFailed(command.getTransactionId(), e.getMessage());</span>
+<span class="nc" id="L89">        }</span>
+
+<span class="nc" id="L91">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

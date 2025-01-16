@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.common.exception</a> &gt; <span class="el_source">BaseException.java</span></div><h1>BaseException.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.common.exception;
+
+/**
+ * BaseException
+ *
+ * @author zhaoyongping
+ * @date 2023/11/8 17:23
+ * @className BaseException
+ **/
+public abstract class BaseException extends RuntimeException {
+
+    /**
+     * 序列化版本号，用于确保序列化和反序列化的兼容性。
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 错误码，用于标识具体的错误类型。
+     */
+    private String errCode;
+
+    /**
+     * 构造一个BaseException对象，传入错误消息。
+     * @param errMessage 错误消息。
+     */
+    public BaseException(String errMessage) {
+<span class="fc" id="L27">        super(errMessage);</span>
+<span class="fc" id="L28">    }</span>
+
+    /**
+     * 构造一个带有错误码和错误消息的 BaseException 对象。
+     * @param errCode 错误码。
+     * @param errMessage 错误消息。
+     */
+    public BaseException(String errCode, String errMessage) {
+<span class="nc" id="L36">        super(errMessage);</span>
+<span class="nc" id="L37">        this.errCode = errCode;</span>
+<span class="nc" id="L38">    }</span>
+
+    /**
+     * 构造一个带有错误消息和异常的 BaseException 对象。
+     * @param errMessage 错误消息。
+     * @param e 异常对象。
+     */
+    public BaseException(String errMessage, Throwable e) {
+<span class="fc" id="L46">        super(errMessage, e);</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * 构造一个带有错误码和错误消息的 BaseException 对象。
+     * @param errCode 错误码
+     * @param errMessage 错误消息
+     * @param e 可能的原因异常
+     */
+    public BaseException(String errCode, String errMessage, Throwable e) {
+<span class="nc" id="L56">        super(errMessage, e);</span>
+<span class="nc" id="L57">        this.errCode = errCode;</span>
+<span class="nc" id="L58">    }</span>
+
+    /**
+     * 获取错误代码
+     * @return 错误代码
+     */
+    public String getErrCode() {
+<span class="nc" id="L65">        return errCode;</span>
+    }
+
+    /**
+     * 设置错误代码
+     * @param errCode 错误代码
+     */
+    public void setErrCode(String errCode) {
+<span class="nc" id="L73">        this.errCode = errCode;</span>
+<span class="nc" id="L74">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocalEventBus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.infrastructure.mq</a> &gt; <span class="el_source">LocalEventBus.java</span></div><h1>LocalEventBus.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.infrastructure.mq;
+
+import com.hsbc.financial.domain.common.exception.InfrastructureException;
+import com.hsbc.financial.domain.common.utils.JacksonUtil;
+import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
+import com.hsbc.financial.domain.transaction.event.EventBus;
+import com.hsbc.financial.domain.transaction.command.TransactionCommand;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.util.Objects;
+
+/**
+ * LocalEventBus
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className LocalEventBus
+ **/
+<span class="fc" id="L21">public class LocalEventBus implements EventBus {</span>
+    /**
+     * 自动注入的应用事件发布者，用于发布交易命令事件。
+     */
+    @Autowired
+    ApplicationEventPublisher applicationEventPublisher;
+
+    /**
+     * 发布交易事件。
+     * @param event 交易事件对象。
+     */
+    @Override
+    public void publish(TransactionEvent event) {
+<span class="fc bfc" id="L34" title="All 4 branches covered.">        if(Objects.isNull(event) || StringUtils.isBlank(event.getEventData())) {</span>
+<span class="fc" id="L35">            throw new InfrastructureException(&quot;event data is null&quot;);</span>
+        }
+<span class="fc" id="L37">        TransactionCommand transactionCommand = JacksonUtil.fromJson(event.getEventData(), TransactionCommand.class);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if(Objects.isNull(transactionCommand)) {</span>
+<span class="nc" id="L39">            throw new InfrastructureException(&quot;transactionCommand is null&quot;);</span>
+        }
+<span class="fc" id="L41">        applicationEventPublisher.publishEvent(transactionCommand);</span>
+<span class="fc" id="L42">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

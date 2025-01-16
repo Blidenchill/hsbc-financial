@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Account.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.account.entity</a> &gt; <span class="el_source">Account.java</span></div><h1>Account.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.account.entity;
+
+import lombok.Data;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+
+
+/**
+ * AccountEntity
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className AccountEntity
+ **/
+@Entity
+@Table(name = &quot;accounts&quot;)
+<span class="pc bnc" id="L25" title="All 62 branches missed.">@Data</span>
+public class Account implements Serializable {
+
+    /**
+     * 主键ID，自增生成
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="nc" id="L33">    private Long id;</span>
+
+    /**
+     * 账户ID，必须唯一且不可为空
+     */
+    @Column(unique = true, nullable = false)
+<span class="fc" id="L39">    private String accountId;</span>
+
+    /**
+     * 账户名称
+     */
+<span class="nc" id="L44">    private String accountName;</span>
+
+    /**
+     * 账户当前余额
+     */
+<span class="fc" id="L49">    private BigDecimal balance;</span>
+
+    /**
+     * 创建时间戳，记录账户创建的时间点。
+     */
+<span class="nc" id="L54">    private Timestamp createdAt;</span>
+
+    /**
+     * 最后更新时间戳，记录账户信息最后一次被修改的时间点。
+     */
+<span class="nc" id="L59">    private Timestamp updatedAt;</span>
+
+    /**
+     * 标记账户是否已被删除。
+     */
+<span class="nc" id="L64">    private Boolean isDeleted;</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

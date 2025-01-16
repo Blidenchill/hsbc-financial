@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JacksonUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.common.utils</a> &gt; <span class="el_source">JacksonUtil.java</span></div><h1>JacksonUtil.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.common.utils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * JacksonUtil
+ *
+ * @author zhaoyongping
+ * @date 2023/11/8 15:31
+ * @className JacksonUtil
+ **/
+<span class="fc" id="L19">@Slf4j</span>
+<span class="nc" id="L20">public class JacksonUtil {</span>
+    /**
+     * JacksonUtil类的默认ObjectMapper实例，用于处理JSON序列化和反序列化。
+     */
+<span class="fc" id="L24">    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();</span>
+
+    /**
+     * 将对象转换为 JSON 字符串。
+     * @param object 要转换的对象。
+     * @return 转换后的 JSON 字符串，若转换失败则返回 null。
+     */
+    public static String toJson(Object object) {
+        try {
+<span class="fc" id="L33">            return OBJECT_MAPPER.writeValueAsString(object);</span>
+<span class="nc" id="L34">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L35">            log.error(&quot;Jackson Error&quot;, e);</span>
+<span class="nc" id="L36">            return null;</span>
+        }
+    }
+
+    /**
+     * 将 JSON 字符串转换为指定类型的对象。
+     * @param json JSON 字符串
+     * @param targetType 目标类型的 Class 对象
+     * @return 转换后的对象，若发生 Jackson 错误则返回 null
+     */
+    public static &lt;T&gt; T fromJson(String json, Class&lt;T&gt; targetType) {
+        try {
+<span class="nc" id="L48">            return OBJECT_MAPPER.readValue(json, targetType);</span>
+<span class="nc" id="L49">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L50">            log.error(&quot;Jackson Error&quot;, e);</span>
+<span class="nc" id="L51">            return null;</span>
+        }
+    }
+    /**
+     * 将JSON字符串转换为指定类型的对象。
+     * @param json JSON字符串
+     * @param typeReference 指定类型的TypeReference对象
+     * @return 转换后的对象，若发生异常则返回null
+     */
+    public static &lt;T&gt; T getObject(String json, TypeReference&lt;T&gt; typeReference) {
+        try {
+<span class="nc" id="L62">            return OBJECT_MAPPER.readValue(json, typeReference);</span>
+<span class="nc" id="L63">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L64">            log.error(&quot;Jackson Error&quot;, e);</span>
+<span class="nc" id="L65">            return null;</span>
+        }
+    }
+
+    /**
+     * 将JSON字符串转换为指定类型的List对象。
+     * @param json JSON字符串
+     * @param targetType 目标类型的Class对象
+     * @return 转换后的List对象，若转换失败则返回null
+     */
+    public static &lt;T&gt; List&lt;T&gt; fromJsonToList(String json, Class&lt;T&gt; targetType) {
+        try {
+            // TypeReference&lt;T&gt;对象，因为是抽象类所以要追加{}实现
+<span class="nc" id="L78">            CollectionType collectionType =</span>
+<span class="nc" id="L79">                    OBJECT_MAPPER.getTypeFactory().constructCollectionType(ArrayList.class, targetType);</span>
+            // 读取字符串，开始转换
+<span class="nc" id="L81">            return OBJECT_MAPPER.readValue(json, collectionType);</span>
+<span class="nc" id="L82">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L83">            log.error(&quot;Jackson Error&quot;, e);</span>
+<span class="nc" id="L84">            return null;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

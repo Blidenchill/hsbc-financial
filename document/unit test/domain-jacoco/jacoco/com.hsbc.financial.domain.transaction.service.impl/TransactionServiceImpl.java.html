@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hsbc-financial-domain</a> &gt; <a href="index.source.html" class="el_package">com.hsbc.financial.domain.transaction.service.impl</a> &gt; <span class="el_source">TransactionServiceImpl.java</span></div><h1>TransactionServiceImpl.java</h1><pre class="source lang-java linenums">package com.hsbc.financial.domain.transaction.service.impl;
+
+import com.hsbc.financial.domain.account.entity.Account;
+import com.hsbc.financial.domain.account.facade.AccountFacadeService;
+import com.hsbc.financial.domain.common.aop.annotation.MethodLog;
+import com.hsbc.financial.domain.common.exception.BusinessException;
+import com.hsbc.financial.domain.common.utils.JacksonUtil;
+import com.hsbc.financial.domain.enums.TransactionStatus;
+import com.hsbc.financial.domain.transaction.entity.TransactionEvent;
+import com.hsbc.financial.domain.transaction.event.EventBus;
+import com.hsbc.financial.domain.transaction.facade.TransactionEventFacadeService;
+import com.hsbc.financial.domain.transaction.command.TransactionCommand;
+import com.hsbc.financial.domain.transaction.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * TransactionServiceImpl
+ *
+ * @author zhaoyongping
+ * @date 2025/1/11
+ * @className TransactionServiceImpl
+ **/
+@Service
+<span class="fc" id="L35">@Slf4j</span>
+public class TransactionServiceImpl implements TransactionService {
+
+    /**
+     * 事件总线，用于发布交易事件。
+     */
+    private final EventBus eventBus;
+
+    /**
+     * 提供交易事件的保存和发布功能。
+     */
+    private final TransactionEventFacadeService transactionEventFacadeService;
+
+    /**
+     * 账户外观服务，提供账户相关的操作接口。
+     */
+    private final AccountFacadeService accountFacadeService;
+
+    /**
+     * 构造函数，初始化TransactionServiceImpl实例。
+     *
+     * @param eventBus                      事件总线服务，用于发布和订阅事件。
+     * @param transactionEventFacadeService 事务事件外观服务，提供事务相关的操作接口。
+     */
+    @Autowired
+<span class="fc" id="L60">    public TransactionServiceImpl(EventBus eventBus, TransactionEventFacadeService transactionEventFacadeService, AccountFacadeService accountFacadeService) {</span>
+<span class="fc" id="L61">        this.eventBus = eventBus;</span>
+<span class="fc" id="L62">        this.transactionEventFacadeService = transactionEventFacadeService;</span>
+<span class="fc" id="L63">        this.accountFacadeService = accountFacadeService;</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * 处理交易命令，创建并发布交易事件。
+     *
+     * @param command 交易命令对象，包含交易的详细信息。
+     */
+    @Transactional
+    @Override
+    @MethodLog
+    public void processTransaction(TransactionCommand command) {
+<span class="fc" id="L75">        checkTransactionCommand(command);</span>
+        // 创建交易事件
+<span class="fc" id="L77">        TransactionEvent event = new TransactionEvent();</span>
+<span class="fc" id="L78">        event.setEventId(UUID.randomUUID().toString());</span>
+<span class="fc" id="L79">        event.setTransactionId(command.getTransactionId());</span>
+<span class="fc" id="L80">        event.setSourceAccountId(command.getSourceAccountId());</span>
+<span class="fc" id="L81">        event.setDestAccountId(command.getDestAccountId());</span>
+<span class="fc" id="L82">        event.setAmount(command.getAmount());</span>
+<span class="fc" id="L83">        event.setEventType(&quot;TRANSACTION_CREATED&quot;);</span>
+<span class="fc" id="L84">        event.setStatus(TransactionStatus.SUBMITTED);</span>
+<span class="fc" id="L85">        event.setEventData(JacksonUtil.toJson(command));</span>
+<span class="fc" id="L86">        event.setCreatedAt(new Timestamp(System.currentTimeMillis()));</span>
+        // 保存事件
+<span class="fc" id="L88">        transactionEventFacadeService.save(event);</span>
+        // 发布事件
+<span class="fc" id="L90">        eventBus.publish(event);</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * 更新交易状态为已处理。
+     * @param transactionId 交易ID。
+     */
+    @Override
+    @MethodLog
+    public void changeTransactionProcessed(String transactionId) {
+        try{
+<span class="fc" id="L101">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.PROCESSED, StringUtils.EMPTY);</span>
+<span class="fc" id="L102">        } catch (Exception ex) {</span>
+<span class="fc" id="L103">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
+<span class="fc" id="L104">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
+<span class="fc" id="L105">        }</span>
+<span class="fc" id="L106">    }</span>
+
+    /**
+     * 更新交易状态为失败，并记录失败原因。
+     * @param transactionId 交易ID
+     * @param failReason 失败原因
+     */
+    @Override
+    @MethodLog
+    public void changeTransactionFailed(String transactionId, String failReason) {
+        try{
+<span class="fc" id="L117">            transactionEventFacadeService.updateStatusByTransactionId(transactionId, TransactionStatus.FAILED, failReason);</span>
+<span class="fc" id="L118">        } catch (Exception ex) {</span>
+<span class="fc" id="L119">            log.error(&quot;当前数据库更新交易状态异常&quot;, ex);</span>
+<span class="fc" id="L120">            throw new BusinessException(&quot;当前数据库更新交易状态异常&quot;);</span>
+<span class="fc" id="L121">        }</span>
+
+<span class="fc" id="L123">    }</span>
+
+    private void checkTransactionCommand(TransactionCommand command) throws IllegalArgumentException {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (Objects.isNull(command)) {</span>
+<span class="fc" id="L127">            log.error(&quot;处理交易命令接口入参校验异常: command is null&quot;);</span>
+<span class="fc" id="L128">            throw new IllegalArgumentException(&quot;command is null&quot;);</span>
+        }
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        if (StringUtils.isBlank(command.getSourceAccountId()) || StringUtils.isBlank(command.getDestAccountId())) {</span>
+<span class="fc" id="L131">            log.error(&quot;处理交易命令接口入参校验异常: accountId is null&quot;);</span>
+<span class="fc" id="L132">            throw new IllegalArgumentException(&quot;accountId is null&quot;);</span>
+        }
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (command.getSourceAccountId().equals(command.getDestAccountId())) {</span>
+<span class="fc" id="L135">            log.error(&quot;处理交易命令接口入参校验异常: source accountId and destination accountId are the same&quot;);</span>
+<span class="fc" id="L136">            throw new IllegalArgumentException(&quot;source accountId and destination accountId are the same&quot;);</span>
+        }
+<span class="fc" id="L138">        Optional&lt;Account&gt; sourceAccount = accountFacadeService.findByAccountId(command.getSourceAccountId());</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (sourceAccount.isEmpty()) {</span>
+<span class="fc" id="L140">            log.error(&quot;处理交易命令接口入参校验异常: source account not found&quot;);</span>
+<span class="fc" id="L141">            throw new IllegalArgumentException(&quot;source account not found&quot;);</span>
+        }
+<span class="fc" id="L143">        Optional&lt;Account&gt; destAccount = accountFacadeService.findByAccountId(command.getDestAccountId());</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (destAccount.isEmpty()) {</span>
+<span class="fc" id="L145">            log.error(&quot;处理交易命令接口入参校验异常: destination account not found&quot;);</span>
+<span class="fc" id="L146">            throw new IllegalArgumentException(&quot;destination account not found&quot;);</span>
+        }
+        //设置当前时间戳
+<span class="fc" id="L149">        command.setTimestamp(new Timestamp(new Date().getTime()));</span>
+<span class="fc" id="L150">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

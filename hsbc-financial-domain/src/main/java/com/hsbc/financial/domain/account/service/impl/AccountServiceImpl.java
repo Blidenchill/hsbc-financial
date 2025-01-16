@@ -11,12 +11,9 @@ import com.hsbc.financial.domain.common.exception.AccountNotFoundException;
 import com.hsbc.financial.domain.common.exception.BusinessException;
 import com.hsbc.financial.domain.common.exception.InfrastructureException;
 import com.hsbc.financial.domain.common.exception.InsufficientBalanceException;
-import com.hsbc.financial.domain.common.exception.SystemException;
 import com.hsbc.financial.domain.transaction.command.TransactionCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.CannotAcquireLockException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -87,11 +84,11 @@ public class AccountServiceImpl implements AccountService {
      * @param command TransactionCommand 对象，包含源账户ID、目标账户ID和转账金额。
      * @throws AccountNotFoundException     如果源账户ID或目标账户ID不存在。
      * @throws InsufficientBalanceException 如果源账户余额不足。
-     * @throws SystemException              如果在更新账户时出现死锁异常或其他未知异常。
+     * @throws BusinessException              如果在更新账户时出现数据库异常或其他未知异常。
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Retryable(
-            value = {CannotAcquireLockException.class, DeadlockLoserDataAccessException.class},
+            value = {BusinessException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000)
     )
