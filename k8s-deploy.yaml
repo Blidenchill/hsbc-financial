@@ -22,16 +22,27 @@ spec:
     spec:
       affinity:
         podAntiAffinity:  # 配置反亲和性策略
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: hsbc-financial
-              topologyKey: "kubernetes.io/hostname"  # 确保Pod不会调度到同一节点
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: hsbc-financial
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - name: hsbc-financial-container
           image: registry.cn-hangzhou.aliyuncs.com/magnus/hsbc-financial:v1.0.5  # 指定镜像
           ports:
             - containerPort: 8080  # 容器暴露端口8080
+          resources:
+            limits:
+              cpu: 500m
+              ephemeral-storage: 4Gi
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 512Mi
 
 ---
 # Service 配置

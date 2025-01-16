@@ -14,10 +14,12 @@
 
 ## 4. k8s部署配置
 部署应用实例的时候,需要考虑一下几点,以便增加系统高可用.
-1. 要配置反亲和性策略,确保多个实例不会同时部署在一台worker节点上.
+1. 要配置反亲和性策略,确保多个实例不会全部部署在一台worker节点上.
 2. 配置更新策略. 一般发版逻辑控制,需要配置滚动更新,这样可以保证系统在发版的时候还能正常提供可靠服务.
 3. 配置HPA, 保证实例可以做到弹性扩缩容.
-4. 配置service时, 这里为了简化操作, Service类型设置为NodePort,直接通过端口暴露出去, 这样就可以通过公网IP+端口访问到应用实例.
+4. 配置service时, 这里为了简化操作, Service类型设置为NodePort,直接通过端口暴露到公网访问, 这样就可以通过公网IP+端口访问到应用实例.
+- #### 服务可以公网访问的地址: http://120.26.48.140:30080
+- 例如, 压测接口: curl -i http://120.26.48.140:30080/pressure/test/transaction
 ```yaml
 #Deployment 配置
 apiVersion: apps/v1
@@ -43,16 +45,27 @@ spec:
     spec:
       affinity:
         podAntiAffinity:  # 配置反亲和性策略
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: hsbc-financial
-              topologyKey: "kubernetes.io/hostname"  # 确保Pod不会调度到同一节点
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: hsbc-financial
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       containers:
         - name: hsbc-financial-container
           image: registry.cn-hangzhou.aliyuncs.com/magnus/hsbc-financial:v1.0.5  # 指定镜像
           ports:
             - containerPort: 8080  # 容器暴露端口8080
+          resources:
+            limits:
+              cpu: 500m
+              ephemeral-storage: 4Gi
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              ephemeral-storage: 2Gi
+              memory: 512Mi
 
 ---
 # Service 配置
@@ -68,6 +81,7 @@ spec:
     - port: 8080          # Service的端口
       targetPort: 8080    # Pod中容器的端口
       nodePort: 30080     # 节点上暴露的端口（30000-32767间未被占用的端口）
+
 ---
 # 自动扩缩容配置
 apiVersion: autoscaling/v2beta2
@@ -88,5 +102,6 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80  # 当CPU利用率超过80%时触发扩容
+
 
 ```
