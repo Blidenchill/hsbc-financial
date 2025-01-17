@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * TransactionControllerIntegrationTest
@@ -87,6 +88,37 @@ public class TransactionControllerIntegrationTest {
 
         assertThat(beforeSourceAccount.getBalance().subtract(afterSourceAccount.getBalance())).isEqualTo(new BigDecimal("100.00"));
         assertThat(afterDestAccount.getBalance().subtract(beroreDestAccount.getBalance())).isEqualTo(new BigDecimal("100.00"));
+    }
+
+    @Test
+    void testTransferThrowException() {
+        // 准备测试数据
+        TransactionCommand command = new TransactionCommand();
+        command.setSourceAccountId("source12312");
+        command.setDestAccountId("dest456");
+        command.setAmount(new BigDecimal("100.00"));
+        command.setTransactionId(UUID.randomUUID().toString());
+
+        // 执行并断言
+        //case 1
+        webTestClient.post()
+                .uri("/transactions/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(command)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(String.class).isEqualTo("交易失败：source account not found");
+
+        //case 2
+        command.setSourceAccountId(null);
+        webTestClient.post()
+                .uri("/transactions/transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(command)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody(String.class).isEqualTo("交易失败：accountId is null");
+
     }
 
     @Test

@@ -57,8 +57,8 @@ public class TransactionController {
         try {
 <span class="fc" id="L58">            transactionService.processTransaction(command);</span>
 <span class="fc" id="L59">            return ResponseEntity.ok(&quot;交易已提交&quot;);</span>
-<span class="nc" id="L60">        } catch (Exception e) {</span>
-<span class="nc" id="L61">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;交易失败：&quot; + e.getMessage());</span>
+<span class="fc" id="L60">        } catch (Exception e) {</span>
+<span class="fc" id="L61">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;交易失败：&quot; + e.getMessage());</span>
         }
     }
 
