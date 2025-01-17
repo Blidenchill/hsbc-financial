@@ -44,7 +44,7 @@
 
 ## 二、系统架构设计
 
-- **采用CQRS模式**：将命令（写）和查询（读）操作分离，写操作通过事件溯源记录交易事件，读操作从账户快照或缓存中获取余额信息。
+- **采用CQRS模式**：将命令（写）和查询（读）操作分离，写操作通过事件溯源记录交易事件，外部封装读取账户的业务场景可以从账户表快照或缓存中获取余额信息。
 - **事件溯源**：所有的交易更新都作为事件存储在`transaction_events`表中，可以重放事件来重建账户状态。
 - **中间件**：
     - **Kafka**：用于事件的发布和订阅，实现异步处理和解耦。
@@ -200,6 +200,7 @@ public interface EventBus {
 public class KafkaEventBus implements EventBus {
 }
 ```
+前期为了开发调试方便, 实现一个LocalBus, 用于本地快速测试. 然后通过启动时的动态配置加载来切换.
 
 ### 3.4 服务层实现
 
@@ -223,8 +224,6 @@ public class TransactionCommand {
     private Timestamp timestamp;
 }
 ```
-
-#### 3.4.3 交易服务实现（TransactionServiceImpl.java）
 
 
 
@@ -331,7 +330,7 @@ public interface TransactionEventRepository extends JpaRepository<TransactionEve
 
 对于核心的交易方法,除了MQ的最终一致性保证, 同时要增加重试机制, 保证在网络抖动, 数据库死锁, 数据库连接超时等情况下, 保证交易成功.
 具体重试机制设计点击下面文档:
-- **[为失败的交易实现重试机制](retry-design.md)**
+- **[为失败的交易实现重试机制.md](retry-design.md)**
 
 
 ## 六、总结

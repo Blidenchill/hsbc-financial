@@ -6,9 +6,11 @@
 - #### 3. k8s部署环节的弹性测试
 ## 1. 单元测试和集成测试.
 在代码工程中,所有核心接口及核心业务逻辑都进行了单元测试和集成测试.
-其中domain层中, 最核心的AccountService和TransactionService都进行了单元测试, 测试覆盖率达到了80%以上.
-infrastructure层中, facade实现类, redisson实现类,MQ消息发送都进行了单元测试, 测试覆盖率达到了80%以上.
-application层, TransactionController对外的服务接口,实现了集成测试.
+其中domain层中, 最核心的AccountService和TransactionService都进行了单元测试, 测试覆盖率达到了100%.
+
+infrastructure层中, facade实现类, redisson实现类,MQ消息发送都进行了单元测试, 测试覆盖率达到了90%以上.
+
+application层, TransactionController对外的服务接口,实现了集成测试, 集成测试覆盖率达到100%.需注意, 集成测试需要连接测试环境的中间件,我在本地跑集成测试用的是本地的环境.
 ### 单测代码覆盖率结果
 代码覆盖率详情可以查看document/unit-test文件夹下的内容.
 - **[查看 jacoco 代码覆盖率结果详情](./unit-test)**

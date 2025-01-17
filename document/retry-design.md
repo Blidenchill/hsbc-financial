@@ -5,7 +5,7 @@
 
 针对第一个维度的重试比较简单,只需要注意对抛出异常类型管理到位就好了. 
 
-以下重点介绍第二个维度的视线, 针对第二个维度,要在`updateAccountBalances`方法中为失败的交易实现重试机制，我使用了**Spring Retry**框架。Spring Retry提供了简单的注解和配置，允许你在出现特定异常时自动重试方法调用。
+以下重点介绍第二个维度的实现, 针对第二个维度,要在`updateAccountBalances`方法中为失败的交易实现重试机制，我使用了**Spring Retry**框架。Spring Retry提供了简单的注解和配置，允许你在出现特定异常时自动重试方法调用。
 
 以下是实现步骤：
 
@@ -104,14 +104,5 @@ public class AccountServiceImpl implements AccountService {
 3. **不可重试的异常**
 
    对于业务异常（如余额不足）或者业务账号不存在，不应触发重试。
-
----
-
-
-
-## 五、总结
-
-通过使用Spring Retry，你可以在`updateAccountBalances`方法中实现对失败交易的自动重试机制。这样，在发生暂时性故障（如数据库死锁）时，系统会自动重试操作，提高了交易的成功率和系统的健壮性。
-
 
 ---
